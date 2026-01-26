@@ -72,6 +72,16 @@
     color: var(--color-accent);
 }
 
+.page-actions {
+    display: none;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.page-item:hover .page-actions {
+    display: flex;
+}
+
 .page-action-btn {
     width: 24px;
     height: 24px;
@@ -80,17 +90,18 @@
     color: var(--color-text-muted);
     font-size: 16px;
     line-height: 1;
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
     transition: all var(--transition-fast);
 }
 
-.page-item:hover .page-action-btn {
-    display: flex;
+.page-action-btn:hover {
+    background-color: var(--color-accent);
+    color: var(--color-bg-primary);
 }
 
-.page-action-btn:hover {
+.page-action-btn.move:hover {
     background-color: var(--color-accent);
     color: var(--color-bg-primary);
 }

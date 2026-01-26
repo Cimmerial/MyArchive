@@ -108,6 +108,7 @@ function WikiPage() {
                     currentPage={currentPage}
                     onCreatePage={createPage}
                     onDeletePage={deletePage}
+                    onUpdatePage={updatePage}
                 />
                 <PageContent
                     projectId={projectId}

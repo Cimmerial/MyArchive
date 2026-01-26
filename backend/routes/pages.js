@@ -154,11 +154,7 @@ router.post('/:projectId/pages', validateProject, (req, res) => {
 router.put('/:projectId/pages/:pageId', validateProject, (req, res) => {
     try {
         const { pageId } = req.params;
-        const { title } = req.body;
-
-        if (!title || title.trim() === '') {
-            return res.status(400).json({ error: 'Page title is required' });
-        }
+        const { title, parentId } = req.body;
 
         const page = req.projectDb.prepare('SELECT * FROM pages WHERE id = ?').get(pageId);
 
@@ -166,11 +162,51 @@ router.put('/:projectId/pages/:pageId', validateProject, (req, res) => {
             return res.status(404).json({ error: 'Page not found' });
         }
 
-        const path = buildPath(req.projectDb, page.parent_id) + (page.parent_id ? ' > ' : '') + title;
+        // Handle title update or parent move
+        const newTitle = title !== undefined ? title : page.title;
+        const newParentId = parentId !== undefined ? (parentId === '' ? null : parentId) : page.parent_id;
+
+        if (newTitle.trim() === '') {
+            return res.status(400).json({ error: 'Page title is required' });
+        }
+
+        // Circular move check - cannot move a page to itself or its descendants
+        if (parentId !== undefined && parentId !== page.parent_id) {
+            if (parentId === parseInt(pageId)) {
+                return res.status(400).json({ error: 'Cannot move a page to itself' });
+            }
+
+            // check if parentId is a descendant of pageId
+            let currentId = parentId;
+            while (currentId) {
+                const parent = req.projectDb.prepare('SELECT parent_id FROM pages WHERE id = ?').get(currentId);
+                if (!parent) break;
+                if (parent.parent_id === parseInt(pageId)) {
+                    return res.status(400).json({ error: 'Cannot move a page to its own descendant' });
+                }
+                currentId = parent.parent_id;
+            }
+        }
+
+        const newPath = buildPath(req.projectDb, newParentId) + (newParentId ? ' > ' : '') + newTitle;
 
         req.projectDb.prepare(
-            'UPDATE pages SET title = ?, path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-        ).run(title, path, pageId);
+            'UPDATE pages SET title = ?, parent_id = ?, path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+        ).run(newTitle, newParentId, newPath, pageId);
+
+        // Recursive function to update paths of all descendants
+        const updateDescendantPaths = (db, parentId) => {
+            const children = db.prepare('SELECT id, title FROM pages WHERE parent_id = ?').all(parentId);
+            for (const child of children) {
+                const childPath = buildPath(db, parentId) + ' > ' + child.title;
+                db.prepare('UPDATE pages SET path = ? WHERE id = ?').run(childPath, child.id);
+                updateDescendantPaths(db, child.id);
+            }
+        };
+
+        if (newParentId !== page.parent_id || newTitle !== page.title) {
+            updateDescendantPaths(req.projectDb, pageId);
+        }
 
         const updatedPage = req.projectDb.prepare('SELECT * FROM pages WHERE id = ?').get(pageId);
 

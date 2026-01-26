@@ -4,12 +4,14 @@ import SearchBar from './SearchBar';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import './Sidebar.css';
 
-function Sidebar({ projectId, allPages, currentPage, onCreatePage, onDeletePage }) {
+function Sidebar({ projectId, allPages, currentPage, onCreatePage, onDeletePage, onUpdatePage }) {
     const [expandedPages, setExpandedPages] = useState(new Set());
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newPageTitle, setNewPageTitle] = useState('');
     const [newPageParent, setNewPageParent] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [moveTarget, setMoveTarget] = useState(null);
+    const [moveParentId, setMoveParentId] = useState(null);
     const navigate = useNavigate();
 
     // Auto-expand all pages by default
@@ -62,6 +64,30 @@ function Sidebar({ projectId, allPages, currentPage, onCreatePage, onDeletePage 
         }
     };
 
+    const handleMovePage = async (e) => {
+        e.preventDefault();
+        if (!moveTarget) return;
+
+        try {
+            await onUpdatePage(moveTarget.id, { parentId: moveParentId });
+            setMoveTarget(null);
+            setMoveParentId(null);
+        } catch (error) {
+            alert('Failed to move page');
+        }
+    };
+
+    const isDescendant = (pageId, potentialParentId) => {
+        if (!potentialParentId) return false;
+        let current = allPages.find(p => p.id === potentialParentId);
+        while (current) {
+            if (current.parent_id === pageId) return true;
+            if (!current.parent_id) break;
+            current = allPages.find(p => p.id === current.parent_id);
+        }
+        return false;
+    };
+
     const renderPageTree = (pages, depth = 0) => {
         return pages.map(page => {
             const children = getChildPages(page.id);
@@ -90,23 +116,35 @@ function Sidebar({ projectId, allPages, currentPage, onCreatePage, onDeletePage 
                         >
                             {page.title}
                         </span>
-                        <button
-                            className="page-action-btn"
-                            onClick={() => {
-                                setNewPageParent(page.id);
-                                setShowCreateModal(true);
-                            }}
-                            title="Add child page"
-                        >
-                            +
-                        </button>
-                        <button
-                            className="page-action-btn delete"
-                            onClick={() => setDeleteTarget({ id: page.id, title: page.title })}
-                            title="Delete page"
-                        >
-                            ×
-                        </button>
+                        <div className="page-actions">
+                            <button
+                                className="page-action-btn"
+                                onClick={() => {
+                                    setNewPageParent(page.id);
+                                    setShowCreateModal(true);
+                                }}
+                                title="Add child page"
+                            >
+                                +
+                            </button>
+                            <button
+                                className="page-action-btn move"
+                                onClick={() => {
+                                    setMoveTarget(page);
+                                    setMoveParentId(page.parent_id);
+                                }}
+                                title="Move page"
+                            >
+                                ↕
+                            </button>
+                            <button
+                                className="page-action-btn delete"
+                                onClick={() => setDeleteTarget({ id: page.id, title: page.title })}
+                                title="Delete page"
+                            >
+                                ×
+                            </button>
+                        </div>
                     </div>
                     {hasChildren && isExpanded && (
                         <div className="page-children">
@@ -175,6 +213,40 @@ function Sidebar({ projectId, allPages, currentPage, onCreatePage, onDeletePage 
                                 </button>
                                 <button type="submit" className="btn-primary">
                                     Create
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {moveTarget && (
+                <div className="modal-overlay" onClick={() => setMoveTarget(null)}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <h3>Move Page: {moveTarget.title}</h3>
+                        <form onSubmit={handleMovePage}>
+                            <div className="form-group">
+                                <label>Select New Parent</label>
+                                <select
+                                    value={moveParentId || ''}
+                                    onChange={(e) => setMoveParentId(e.target.value ? parseInt(e.target.value) : null)}
+                                >
+                                    <option value="">Root Level</option>
+                                    {allPages
+                                        .filter(p => p.id !== moveTarget.id && !isDescendant(moveTarget.id, p.id))
+                                        .map(page => (
+                                            <option key={page.id} value={page.id}>
+                                                {page.path}
+                                            </option>
+                                        ))}
+                                </select>
+                            </div>
+                            <div className="modal-actions">
+                                <button type="button" className="btn-secondary" onClick={() => setMoveTarget(null)}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn-primary">
+                                    Move
                                 </button>
                             </div>
                         </form>

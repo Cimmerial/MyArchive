@@ -1,0 +1,117 @@
+.cell-container {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-md);
+    transition: background-color var(--transition-fast);
+}
+
+.cell-container:hover {
+    background-color: var(--color-bg-secondary);
+}
+
+.cell-drag-handle {
+    width: 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: var(--spacing-sm);
+    color: var(--color-text-muted);
+    cursor: grab;
+    user-select: none;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.cell-container:hover .cell-drag-handle {
+    opacity: 1;
+}
+
+.cell-drag-handle:active {
+    cursor: grabbing;
+}
+
+.cell-content-wrapper {
+    flex: 1;
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+}
+
+.cell-type-selector {
+    flex-shrink: 0;
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    order: 2;
+}
+
+.cell-container:hover .cell-type-selector {
+    opacity: 1;
+}
+
+.cell-content {
+    flex: 1;
+    outline: none;
+    min-height: 24px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    transition: background-color var(--transition-fast);
+    order: 1;
+}
+
+.cell-content:focus {
+    background-color: var(--color-bg-secondary);
+}
+
+.cell-content:empty:before {
+    content: 'Type something...';
+    color: var(--color-text-muted);
+}
+
+.cell-header {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-accent);
+}
+
+.cell-subheader {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.cell-text {
+    font-size: var(--font-size-md);
+    color: var(--color-text-primary);
+    line-height: 1.8;
+}
+
+.cell-delete-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--border-radius-sm);
+    background-color: transparent;
+    color: var(--color-text-muted);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+    order: 3;
+}
+
+.cell-container:hover .cell-delete-btn {
+    opacity: 1;
+}
+
+.cell-delete-btn:hover {
+    background-color: rgba(255, 68, 68, 0.2);
+    color: #ff4444;
+}

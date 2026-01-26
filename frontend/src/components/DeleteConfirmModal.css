@@ -1,0 +1,39 @@
+.delete-confirm-modal {
+    max-width: 500px;
+}
+
+.delete-confirm-modal h3 {
+    color: #ff4444;
+    margin-bottom: var(--spacing-lg);
+}
+
+.delete-warning {
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.6;
+}
+
+.delete-instruction {
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-sm);
+}
+
+.btn-danger {
+    background-color: #ff4444;
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #ff0000;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+}
+
+.btn-danger:disabled {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+}

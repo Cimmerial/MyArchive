@@ -1,0 +1,39 @@
+.wiki-header {
+    background-color: var(--color-bg-secondary);
+    border-bottom: 2px solid var(--color-border);
+    padding: var(--spacing-lg) var(--spacing-xl);
+}
+
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.breadcrumb-item {
+    color: var(--color-text-secondary);
+    transition: all var(--transition-fast);
+    font-size: var(--font-size-base);
+    white-space: nowrap;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+}
+
+.breadcrumb-item:hover {
+    color: var(--color-accent-hover);
+    background-color: var(--color-bg-hover);
+}
+
+.breadcrumb-item.active {
+    color: var(--color-accent);
+    font-weight: 600;
+    background-color: var(--color-bg-tertiary);
+}
+
+.breadcrumb-separator {
+    color: var(--color-text-muted);
+    user-select: none;
+    font-size: var(--font-size-base);
+    opacity: 0.5;
+}

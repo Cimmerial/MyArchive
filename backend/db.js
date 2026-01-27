@@ -31,13 +31,13 @@ export function getProjectDb(projectName) {
 
   const dbPath = join(projectDir, 'project.db');
   const db = new Database(dbPath);
-  
+
   // Enable foreign keys
   db.pragma('foreign_keys = ON');
-  
+
   // Initialize schema
   initializeSchema(db);
-  
+
   dbConnections.set(projectName, db);
   return db;
 }
@@ -95,9 +95,9 @@ function initializeSchema(db) {
 export function getMetaDb() {
   const metaDbPath = join(PROJECTS_DIR, 'meta.db');
   const db = new Database(metaDbPath);
-  
+
   db.pragma('foreign_keys = ON');
-  
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS projects (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -107,7 +107,7 @@ export function getMetaDb() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
-  
+
   return db;
 }
 

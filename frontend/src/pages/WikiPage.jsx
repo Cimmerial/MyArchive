@@ -19,12 +19,10 @@ function WikiPage() {
     }, [projectId]);
 
     useEffect(() => {
-        if (pageId) {
-            loadPage(pageId);
-        } else {
-            setCurrentPage(null);
+        if (projectId) {
+            loadPage(pageId || 'main');
         }
-    }, [pageId]);
+    }, [projectId, pageId]);
 
     const loadProject = async () => {
         try {
@@ -104,6 +102,7 @@ function WikiPage() {
             <div className="wiki-content">
                 <Sidebar
                     projectId={projectId}
+                    project={project}
                     allPages={allPages}
                     currentPage={currentPage}
                     onCreatePage={createPage}

@@ -8,6 +8,9 @@ function Header({ project, currentPage, allPages }) {
         const crumbs = [];
         let page = currentPage;
 
+        // Skip adding the main page to crumbs as it's already shown via the project name link
+        if (page.id === 'main') return [];
+
         // Build breadcrumb trail
         while (page) {
             crumbs.unshift(page);

@@ -29,6 +29,7 @@ logs/
 
 # Testing
 coverage/
+start_server.sh
 
 # Temporary files
 *.tmp

@@ -8,6 +8,21 @@ const router = express.Router();
  */
 function getDbFromPage(req, res, next) {
     const { pageId } = req.params;
+    const { projectId } = req.body;
+
+    if (pageId === 'main') {
+        if (!projectId) {
+            return res.status(400).json({ error: 'projectId is required for main page operations' });
+        }
+        const metaDb = getMetaDb();
+        const project = metaDb.prepare('SELECT * FROM projects WHERE id = ?').get(projectId);
+        if (project) {
+            req.projectDb = getProjectDb(project.name);
+            req.page = { id: 0 };
+            return next();
+        }
+        return res.status(404).json({ error: 'Project not found' });
+    }
 
     // Find which project this page belongs to
     const metaDb = getMetaDb();
@@ -67,13 +82,13 @@ router.post('/pages/:pageId/cells', getDbFromPage, (req, res) => {
         if (finalOrderIndex === undefined) {
             const maxOrder = req.projectDb.prepare(
                 'SELECT MAX(order_index) as max FROM cells WHERE page_id = ?'
-            ).get(pageId);
+            ).get(pageId === 'main' ? 0 : pageId);
             finalOrderIndex = (maxOrder.max || -1) + 1;
         }
 
         const result = req.projectDb.prepare(
             'INSERT INTO cells (page_id, type, content, order_index) VALUES (?, ?, ?, ?)'
-        ).run(pageId, type, content || '', finalOrderIndex);
+        ).run(pageId === 'main' ? 0 : pageId, type, content || '', finalOrderIndex);
 
         const cell = req.projectDb.prepare('SELECT * FROM cells WHERE id = ?').get(result.lastInsertRowid);
 
@@ -175,7 +190,7 @@ router.put('/pages/:pageId/cells/reorder', getDbFromPage, (req, res) => {
 
         const cells = req.projectDb.prepare(
             'SELECT * FROM cells WHERE page_id = ? ORDER BY order_index'
-        ).all(pageId);
+        ).all(pageId === 'main' ? 0 : pageId);
 
         res.json(cells);
     } catch (error) {

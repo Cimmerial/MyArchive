@@ -4,7 +4,7 @@ import SearchBar from './SearchBar';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import './Sidebar.css';
 
-function Sidebar({ projectId, allPages, currentPage, onCreatePage, onDeletePage, onUpdatePage }) {
+function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDeletePage, onUpdatePage }) {
     const [expandedPages, setExpandedPages] = useState(new Set());
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newPageTitle, setNewPageTitle] = useState('');
@@ -169,6 +169,14 @@ function Sidebar({ projectId, allPages, currentPage, onCreatePage, onDeletePage,
                 >
                     + New Page
                 </button>
+                {project && (
+                    <button
+                        className={`btn-secondary sidebar-main-page-btn ${currentPage?.id === 'main' ? 'active' : ''}`}
+                        onClick={() => navigate(`/project/${projectId}`)}
+                    >
+                        {project.display_name} Main Page
+                    </button>
+                )}
             </div>
 
             <div className="page-tree">

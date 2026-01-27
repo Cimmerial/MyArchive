@@ -57,6 +57,13 @@ router.get('/:projectId/pages/:pageId', validateProject, (req, res) => {
     try {
         const { pageId } = req.params;
 
+        if (pageId === 'main') {
+            const cells = req.projectDb.prepare(
+                'SELECT * FROM cells WHERE page_id = 0 ORDER BY order_index'
+            ).all();
+            return res.json({ id: 'main', title: req.project.display_name, cells });
+        }
+
         const page = req.projectDb.prepare('SELECT * FROM pages WHERE id = ?').get(pageId);
 
         if (!page) {

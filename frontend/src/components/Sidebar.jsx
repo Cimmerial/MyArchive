@@ -208,11 +208,14 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
                                     onChange={(e) => setNewPageParent(e.target.value ? parseInt(e.target.value) : null)}
                                 >
                                     <option value="">Root Level</option>
-                                    {allPages.map(page => (
-                                        <option key={page.id} value={page.id}>
-                                            {page.path}
-                                        </option>
-                                    ))}
+                                    {allPages
+                                        .slice()
+                                        .sort((a, b) => a.path.localeCompare(b.path))
+                                        .map(page => (
+                                            <option key={page.id} value={page.id}>
+                                                {page.path}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
                             <div className="modal-actions">
@@ -242,6 +245,7 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
                                     <option value="">Root Level</option>
                                     {allPages
                                         .filter(p => p.id !== moveTarget.id && !isDescendant(moveTarget.id, p.id))
+                                        .sort((a, b) => a.path.localeCompare(b.path))
                                         .map(page => (
                                             <option key={page.id} value={page.id}>
                                                 {page.path}

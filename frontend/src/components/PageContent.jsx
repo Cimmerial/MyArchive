@@ -98,7 +98,7 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
         }
     };
 
-    const childPages = page
+    const childPages = (page && page.id !== 'main')
         ? allPages.filter(p => p.parent_id === page.id).sort((a, b) => a.title.localeCompare(b.title))
         : allPages.filter(p => !p.parent_id).sort((a, b) => a.title.localeCompare(b.title));
 

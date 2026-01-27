@@ -57,6 +57,9 @@ function initializeSchema(db) {
       FOREIGN KEY (parent_id) REFERENCES pages(id) ON DELETE CASCADE
     );
 
+    -- Ensure a dummy "Main Page" exists with ID 0 for project-level cells
+    INSERT OR IGNORE INTO pages (id, title, path) VALUES (0, 'Main Page', 'Main Page');
+
     CREATE TABLE IF NOT EXISTS cells (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       page_id INTEGER NOT NULL,

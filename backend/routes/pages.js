@@ -42,7 +42,7 @@ function buildPath(db, pageId) {
  */
 router.get('/:projectId/pages', validateProject, (req, res) => {
     try {
-        const pages = req.projectDb.prepare('SELECT * FROM pages ORDER BY title').all();
+        const pages = req.projectDb.prepare('SELECT * FROM pages WHERE id != 0 ORDER BY title').all();
         res.json(pages);
     } catch (error) {
         console.error('Error fetching pages:', error);

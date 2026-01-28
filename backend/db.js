@@ -83,6 +83,49 @@ function initializeSchema(db) {
     })();
   }
 
+  // Check if links table has corrupted foreign key reference to cells_old
+  const linksInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='links'").get();
+
+  if (linksInfo && linksInfo.sql.includes('cells_old')) {
+    console.log("Migrating 'links' table to fix cells_old foreign key reference...");
+    db.transaction(() => {
+      // 1. Get all existing links data
+      const existingLinks = db.prepare("SELECT * FROM links").all();
+
+      // 2. Drop the old links table
+      db.exec("DROP TABLE links");
+
+      // 3. Recreate links table with correct foreign keys
+      db.exec(`
+        CREATE TABLE links (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          source_page_id INTEGER NOT NULL,
+          target_page_id INTEGER NOT NULL,
+          cell_id INTEGER NOT NULL,
+          link_text TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (source_page_id) REFERENCES pages(id) ON DELETE CASCADE,
+          FOREIGN KEY (target_page_id) REFERENCES pages(id) ON DELETE CASCADE,
+          FOREIGN KEY (cell_id) REFERENCES cells(id) ON DELETE CASCADE
+        )
+      `);
+
+      // 4. Restore the data
+      if (existingLinks.length > 0) {
+        const insertStmt = db.prepare('INSERT INTO links (id, source_page_id, target_page_id, cell_id, link_text, created_at) VALUES (?, ?, ?, ?, ?, ?)');
+        for (const link of existingLinks) {
+          insertStmt.run(link.id, link.source_page_id, link.target_page_id, link.cell_id, link.link_text, link.created_at);
+        }
+      }
+
+      // 5. Recreate indices
+      db.exec("CREATE INDEX IF NOT EXISTS idx_links_source ON links(source_page_id)");
+      db.exec("CREATE INDEX IF NOT EXISTS idx_links_target ON links(target_page_id)");
+
+      console.log("Links table migration complete.");
+    })();
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS pages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

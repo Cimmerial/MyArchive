@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
@@ -9,6 +9,7 @@ import './WikiPage.css';
 // Reading WikiPage.jsx first to confirm title rendering location.
 function WikiPage() {
     const { projectId, pageId } = useParams();
+    const navigate = useNavigate();
     const [project, setProject] = useState(null);
     const [currentPage, setCurrentPage] = useState(null);
     const [allPages, setAllPages] = useState([]);
@@ -84,9 +85,11 @@ function WikiPage() {
     const deletePage = async (id) => {
         try {
             await axios.delete(`/api/projects/${projectId}/pages/${id}`);
-            setAllPages(allPages.filter(p => p.id !== id));
+            // Reload all pages from backend to ensure child pages are removed
+            await loadPages();
+            // If we deleted the current page, navigate to main page
             if (currentPage?.id === id) {
-                setCurrentPage(null);
+                navigate(`/project/${projectId}`);
             }
         } catch (error) {
             console.error('Failed to delete page:', error);

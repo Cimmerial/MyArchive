@@ -252,42 +252,60 @@ router.delete('/:projectId/pages/:pageId', validateProject, (req, res) => {
         const { pageId } = req.params;
 
         // UNLINKING LOGIC: Find all links to this page and revert them to text
-        const page = req.projectDb.prepare('SELECT title FROM pages WHERE id = ?').get(pageId);
-        if (page) {
-            // Find all links targeting this page
-            const links = req.projectDb.prepare('SELECT * FROM links WHERE target_page_id = ?').all(pageId);
+        try {
+            const page = req.projectDb.prepare('SELECT title FROM pages WHERE id = ?').get(pageId);
+            if (page) {
+                // Find all links targeting this page
+                const links = req.projectDb.prepare('SELECT * FROM links WHERE target_page_id = ?').all(pageId);
 
-            for (const link of links) {
-                // Get the cell content
-                const cell = req.projectDb.prepare('SELECT content FROM cells WHERE id = ?').get(link.cell_id);
-                if (cell) {
-                    // Regex to replace [[Page Title]] with Page Title case-insensitive
-                    // We simply remove the brackets.
-                    // Note: If there are multiple links in one cell, this regex should handle them if global?
-                    // Actually, let's look for the specific link we tracked? 
-                    // But the link table doesn't store the exact text match in cell, just link_text.
-                    // The safest way is to replace `[[Title]]` with `Title`.
+                for (const link of links) {
+                    // Get the cell content
+                    const cell = req.projectDb.prepare('SELECT content FROM cells WHERE id = ?').get(link.cell_id);
+                    if (cell) {
+                        // Regex to replace [[Page Title]] with Page Title case-insensitive
+                        const pattern = new RegExp(`\\[\\[${escapeRegExp(page.title)}\\]\\]`, 'gi');
+                        const newContent = cell.content.replace(pattern, page.title);
 
-                    const pattern = new RegExp(`\\[\\[${escapeRegExp(page.title)}\\]\\]`, 'gi');
-                    const newContent = cell.content.replace(pattern, page.title);
-
-                    if (newContent !== cell.content) {
-                        req.projectDb.prepare('UPDATE cells SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newContent, link.cell_id);
+                        if (newContent !== cell.content) {
+                            req.projectDb.prepare('UPDATE cells SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newContent, link.cell_id);
+                        }
                     }
                 }
             }
+        } catch (unlinkError) {
+            // If links table doesn't exist (older databases), just log and continue
+            console.warn('Could not process links during page deletion (table may not exist):', unlinkError.message);
         }
 
-        const result = req.projectDb.prepare('DELETE FROM pages WHERE id = ?').run(pageId);
+        // Manually delete to avoid CASCADE issues with corrupted foreign keys
+        // 1. Recursively delete all child pages
+        const deletePageAndChildren = (id) => {
+            const children = req.projectDb.prepare('SELECT id FROM pages WHERE parent_id = ?').all(id);
+            for (const child of children) {
+                deletePageAndChildren(child.id);
+            }
+            // Delete cells for this page
+            req.projectDb.prepare('DELETE FROM cells WHERE page_id = ?').run(id);
+            // Delete links for this page
+            try {
+                req.projectDb.prepare('DELETE FROM links WHERE source_page_id = ? OR target_page_id = ?').run(id, id);
+            } catch (e) {
+                // Links table might not exist
+            }
+            // Delete the page itself
+            req.projectDb.prepare('DELETE FROM pages WHERE id = ?').run(id);
+        };
 
-        if (result.changes === 0) {
-            return res.status(404).json({ error: 'Page not found' });
-        }
+        deletePageAndChildren(pageId);
 
         res.status(204).send();
     } catch (error) {
-        console.error('Error deleting page:', error);
-        res.status(500).json({ error: 'Failed to delete page' });
+        console.error('Error deleting page:', {
+            message: error.message,
+            code: error.code,
+            stack: error.stack
+        });
+        res.status(500).json({ error: 'Failed to delete page', details: error.message });
     }
 });
 

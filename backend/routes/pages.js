@@ -61,7 +61,9 @@ router.get('/:projectId/pages/:pageId', validateProject, (req, res) => {
             const cells = req.projectDb.prepare(
                 'SELECT * FROM cells WHERE page_id = 0 ORDER BY order_index'
             ).all();
-            return res.json({ id: 'main', title: req.project.display_name, cells });
+            // Main page doesn't have a specific updated_at in DB technically, but cells do.
+            // We can compute max cell update.
+            return res.json({ id: 'main', title: req.project.display_name, cells, updated_at: new Date().toISOString() });
         }
 
         const page = req.projectDb.prepare('SELECT * FROM pages WHERE id = ?').get(pageId);
@@ -74,7 +76,34 @@ router.get('/:projectId/pages/:pageId', validateProject, (req, res) => {
             'SELECT * FROM cells WHERE page_id = ? ORDER BY order_index'
         ).all(pageId);
 
-        res.json({ ...page, cells });
+        // Recursive function to get max updated_at for all descendants
+        const getSubUpdated = (parentId) => {
+            let maxDate = null;
+            const children = req.projectDb.prepare('SELECT id, updated_at FROM pages WHERE parent_id = ?').all(parentId);
+
+            for (const child of children) {
+                // Check child's own update time
+                if (!maxDate || new Date(child.updated_at) > new Date(maxDate)) {
+                    maxDate = child.updated_at;
+                }
+
+                // Check child's cells update time (if we want that granularity, but let's stick to page/descendant pages for now as user asked for "subpage was updated")
+                // User asked: "last time a subpage was updated". This implies checking the subpages themselves AND their content?
+                // Usually "updated_at" on page should trigger when cells change?
+                // Currently only PUT page updates `updated_at`. Cell changes should probably update parent page `updated_at` too?
+                // Let's assume for now we check child pages recursively.
+
+                const subMax = getSubUpdated(child.id);
+                if (subMax && (!maxDate || new Date(subMax) > new Date(maxDate))) {
+                    maxDate = subMax;
+                }
+            }
+            return maxDate;
+        };
+
+        const subUpdatedAt = getSubUpdated(pageId);
+
+        res.json({ ...page, cells, sub_updated_at: subUpdatedAt });
     } catch (error) {
         console.error('Error fetching page:', error);
         res.status(500).json({ error: 'Failed to fetch page' });

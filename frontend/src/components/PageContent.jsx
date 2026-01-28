@@ -124,12 +124,18 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
 
     const isMainPage = page.id === 'main';
 
+    const formatDate = (dateString) => {
+        if (!dateString) return 'Never';
+        return new Date(dateString).toLocaleDateString();
+    };
+
     return (
         <div className="page-content">
             <div className="page-content-inner">
                 {isMainPage ? (
                     <>
                         <h1 className="project-main-header">Project Main Page</h1>
+                        {/* Main page doesn't really track update time in same way, skipping or adding if needed */}
 
                         <div className="child-pages-section">
                             <div className="section-header-row">
@@ -156,22 +162,32 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
                         </div>
                     </>
                 ) : (
-                    childPages.length > 0 && (
-                        <div className="child-pages-section">
-                            <h3 className="child-pages-header">Sub-Articles</h3>
-                            <div className="child-pages-grid">
-                                {childPages.map(child => (
-                                    <div
-                                        key={child.id}
-                                        className="child-page-link"
-                                        onClick={() => navigate(`/project/${projectId}/page/${child.id}`)}
-                                    >
-                                        {child.title}
-                                    </div>
-                                ))}
+                    <>
+                        <div className="page-header-section" style={{ marginBottom: '2rem' }}>
+                            <h1 className="page-title" style={{ fontSize: '2.5rem', fontWeight: '800', margin: '0 0 0.5rem 0', color: '#ffffff' }}>{page.title}</h1>
+                            <div className="page-meta" style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+                                Last updated: {formatDate(page.updated_at)}
+                                {page.sub_updated_at && ` (Subpages: ${formatDate(page.sub_updated_at)})`}
                             </div>
                         </div>
-                    )
+
+                        {childPages.length > 0 && (
+                            <div className="child-pages-section">
+                                <h3 className="child-pages-header">Sub-Articles</h3>
+                                <div className="child-pages-grid">
+                                    {childPages.map(child => (
+                                        <div
+                                            key={child.id}
+                                            className="child-page-link"
+                                            onClick={() => navigate(`/project/${projectId}/page/${child.id}`)}
+                                        >
+                                            {child.title}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 <DndContext

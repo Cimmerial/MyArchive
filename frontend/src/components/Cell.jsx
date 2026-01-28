@@ -200,8 +200,22 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
         }
     };
 
+    const [editingLinkNode, setEditingLinkNode] = useState(null);
+
     const handleContextMenu = (e) => {
         e.preventDefault();
+
+        // Check if we right-clicked a link
+        const targetLink = e.target.closest('.wiki-link');
+        if (targetLink) {
+            setSelectedText(targetLink.textContent);
+            setContextMenuPos({ x: e.clientX, y: e.clientY });
+            setEditingLinkNode(targetLink); // Store the actual DOM node (or reference logic)
+            setIsContextMenuOpen(true);
+            setShowContextMenu(true);
+            return;
+        }
+
         const selection = window.getSelection();
         const text = selection.toString().trim();
 
@@ -223,6 +237,7 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
 
                 setSelectedText(text);
                 setContextMenuPos({ x: e.clientX, y: e.clientY });
+                setEditingLinkNode(null); // Just selection, not existing link
                 setIsContextMenuOpen(true);
                 setShowContextMenu(true);
             } catch (error) {
@@ -231,6 +246,50 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                 // For now, just don't open menu to avoid breaking things
             }
         }
+    };
+
+    const handleUnlink = () => {
+        if (!editingLinkNode) return;
+
+        // Create a temporary container to manipulate string
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = contentRef.current.innerHTML;
+
+        // Find the matching link in our temp container
+        // Since we can't depend on object reference equality across re-renders/innerHTML, 
+        // rely on exact coordinate or unique text?
+        // Better: rely on the fact that 'editingLinkNode' was a reference to a live DOM node 
+        // BUT 'content' state might have refreshed?
+        // Safest: Use data-page-id and text content to find it.
+
+        const pageId = editingLinkNode.getAttribute('data-page-id');
+        const text = editingLinkNode.textContent;
+
+        const links = tempDiv.querySelectorAll(`.wiki-link[data-page-id="${pageId}"]`);
+
+        // Find the one that matches text, or just the first if text is unique enough? 
+        // There might be duplicates. 
+        // Actually, since we only open menu on one, let's just use the clicked node's replaceWith IF it's still valid.
+        // But since we are operating on state string, we need to find it in the string.
+
+        // Alternative: Use range again?
+
+        // Let's iterate and find exact outerHTML match?
+        for (let link of links) {
+            if (link.textContent === text) {
+                const textNode = document.createTextNode(text);
+                link.replaceWith(textNode);
+                break; // Only unlink one instance
+            }
+        }
+
+        const newHtml = tempDiv.innerHTML;
+        setContent(newHtml);
+        onUpdate(cell.id, { content: newHtml });
+
+        setShowContextMenu(false);
+        setIsContextMenuOpen(false);
+        setEditingLinkNode(null);
     };
 
     const cleanupMarker = (html) => {
@@ -423,17 +482,20 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                         setShowContextMenu(false);
                         setIsContextMenuOpen(false);
                         setIsTypeMenuOpen(false);
+                        setEditingLinkNode(null);
+
                         // Cleanup marker if menu is closed without action
                         if (contentRef.current) {
                             const cleanHtml = cleanupMarker(contentRef.current.innerHTML);
                             if (cleanHtml !== content) {
                                 setContent(cleanHtml);
-                                // No onUpdate needed as we just reverted visual state
                             }
                         }
                     }}
                     onSelectPage={handleLinkSelect}
                     onCreateNew={handleCreateNewPage}
+                    isLink={!!editingLinkNode}
+                    onUnlink={handleUnlink}
                 />
             )}
 

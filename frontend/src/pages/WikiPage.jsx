@@ -6,6 +6,7 @@ import Sidebar from '../components/Sidebar';
 import PageContent from '../components/PageContent';
 import './WikiPage.css';
 
+// Reading WikiPage.jsx first to confirm title rendering location.
 function WikiPage() {
     const { projectId, pageId } = useParams();
     const [project, setProject] = useState(null);

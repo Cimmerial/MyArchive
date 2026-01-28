@@ -32,7 +32,7 @@ function DeleteConfirmModal({ itemType, itemName, onConfirm, onCancel }) {
                     {itemType === 'page' && ' This will also delete all child pages and cells.'}
                 </p>
                 <p className="delete-instruction text-muted">
-                    Type <strong className="delete-confirm-word" onClick={() => setConfirmText('DELETE')}>DELETE</strong> to confirm:
+                    Type <strong className="delete-confirm-word" onClick={() => onConfirm()}>DELETE</strong> to confirm:
                 </p>
                 <form onSubmit={handleSubmit}>
                     <input

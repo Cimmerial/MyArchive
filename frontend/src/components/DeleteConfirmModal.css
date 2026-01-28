@@ -1,42 +1,40 @@
-.delete-confirm-modal h3 {
-    margin-top: 0;
-    color: var(--color-text-primary);
+.delete-confirm-word {
+    cursor: pointer;
+    color: #ffffff;
+    /* White text */
+    text-decoration: underline;
+    transition: opacity 0.2s;
+}
+
+.delete-confirm-word:hover {
+    opacity: 0.8;
+}
+
+.delete-confirm-modal {
+    max-width: 400px;
+    width: 100%;
+    padding: 2rem;
+    text-align: center;
 }
 
 .delete-warning {
     margin: 1rem 0;
-    color: var(--color-text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.text-accent {
+    color: var(--color-accent);
 }
 
 .delete-instruction {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     font-size: 0.9rem;
 }
 
-.delete-confirm-word {
-    cursor: pointer;
-    color: var(--color-accent);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    transition: color 0.2s;
-}
-
-.delete-confirm-word:hover {
-    color: #fff;
-}
-
-.delete-confirm-modal input {
-    width: 100%;
-    padding: 0.5rem;
-    margin-bottom: 1.5rem;
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    color: var(--color-text-primary);
-    font-size: 1rem;
-}
-
-.delete-confirm-modal input:focus {
-    outline: none;
-    border-color: var(--color-accent);
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
 }

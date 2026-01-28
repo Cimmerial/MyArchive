@@ -23,6 +23,7 @@
     /* Padding on the right */
 }
 
+/* Show controls on hover or if menu is open */
 .cell-container:hover .cell-controls-right,
 .cell-container:focus-within .cell-controls-right {
     opacity: 1;
@@ -157,6 +158,31 @@
 
 .cell-content:focus {
     background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Header Styles */
+.cell-header {
+    font-size: 2em !important;
+    font-weight: 800 !important;
+    color: #ffcc00 !important;
+    /* Yellow */
+    margin: 0.6rem 0;
+    line-height: 1.2;
+}
+
+/* Subheader Styles */
+.cell-subheader {
+    font-size: 1.5em !important;
+    font-weight: 700 !important;
+    color: var(--color-text-primary) !important;
+    margin: 0.5rem 0;
+    line-height: 1.3;
+}
+
+/* Regular Text Style */
+.cell-text {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
 }
 
 /* Link Marker */

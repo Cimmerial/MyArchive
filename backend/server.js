@@ -44,5 +44,5 @@ process.on('SIGTERM', () => {
 });
 
 app.listen(PORT, () => {
-    console.log(`MyArchive backend running on http://localhost:${PORT}`);
+    console.log(`Mychive backend running on http://localhost:${PORT}`);
 });

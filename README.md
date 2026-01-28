@@ -1,15 +1,15 @@
-# MyArchive - Startup Instructions
+# Mychive - Startup Instructions
 
 ## Starting the Application
 
-MyArchive consists of two parts that need to be running simultaneously:
+Mychive consists of two parts that need to be running simultaneously:
 
 ### 1. Start the Backend Server
 
 Open a terminal and run:
 
 ```bash
-cd /Users/gundermutt/Downloads/Non-icloud\ Repos/MyArchive/backend
+cd /Users/gundermutt/Downloads/Non-icloud\ Repos/Mychive/backend
 npm run dev
 ```
 
@@ -17,7 +17,7 @@ The backend will start on **http://localhost:3001**
 
 You should see:
 ```
-MyArchive backend running on http://localhost:3001
+Mychive backend running on http://localhost:3001
 ```
 
 ### 2. Start the Frontend Application
@@ -38,7 +38,7 @@ VITE v7.3.1  ready in XXXms
 ➜  Local:   http://localhost:5173/
 ```
 
-### 3. Access MyArchive
+### 3. Access Mychive
 
 Open your web browser and navigate to:
 
@@ -61,7 +61,7 @@ Open your web browser and navigate to:
 
 ## Stopping the Application
 
-To stop MyArchive:
+To stop Mychive:
 
 1. Go to the terminal running the frontend and press **Ctrl+C**
 2. Go to the terminal running the backend and press **Ctrl+C**
@@ -72,7 +72,7 @@ To stop MyArchive:
 
 All your projects are stored in:
 ```
-/Users/gundermutt/Downloads/Non-icloud Repos/MyArchive/projects/
+/Users/gundermutt/Downloads/Non-icloud Repos/Mychive/projects/
 ```
 
 Each project has its own folder with a `project.db` file. You can backup or move entire project folders as needed.

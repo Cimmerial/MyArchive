@@ -46,6 +46,43 @@ export function getProjectDb(projectName) {
  * Initialize database schema
  */
 function initializeSchema(db) {
+  // Check if migration is needed for 'table' type
+  const tableInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='cells'").get();
+
+  if (tableInfo && !tableInfo.sql.includes("'table'")) {
+    console.log("Migrating 'cells' table to support 'table' type...");
+    db.transaction(() => {
+      // 1. Rename old table
+      db.exec("ALTER TABLE cells RENAME TO cells_old");
+
+      // 2. Create new table (Constraint updated)
+      db.exec(`
+        CREATE TABLE cells (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          page_id INTEGER NOT NULL,
+          type TEXT NOT NULL CHECK(type IN ('header', 'subheader', 'text', 'table')),
+          content TEXT NOT NULL DEFAULT '',
+          order_index INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
+        )
+      `);
+
+      // 3. Copy data
+      db.exec("INSERT INTO cells (id, page_id, type, content, order_index, created_at, updated_at) SELECT id, page_id, type, content, order_index, created_at, updated_at FROM cells_old");
+
+      // 4. Drop old table
+      db.exec("DROP TABLE cells_old");
+
+      // 5. Recreate indices
+      db.exec("CREATE INDEX IF NOT EXISTS idx_cells_page ON cells(page_id)");
+      db.exec("CREATE INDEX IF NOT EXISTS idx_cells_order ON cells(page_id, order_index)");
+
+      console.log("Migration complete.");
+    })();
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS pages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,7 +100,7 @@ function initializeSchema(db) {
     CREATE TABLE IF NOT EXISTS cells (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       page_id INTEGER NOT NULL,
-      type TEXT NOT NULL CHECK(type IN ('header', 'subheader', 'text')),
+      type TEXT NOT NULL CHECK(type IN ('header', 'subheader', 'text', 'table')),
       content TEXT NOT NULL DEFAULT '',
       order_index INTEGER NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

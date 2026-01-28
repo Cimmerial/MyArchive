@@ -1,0 +1,280 @@
+.table-editor {
+    width: 100%;
+    margin: 10px 0;
+    overflow-x: auto;
+    border: 1px solid transparent;
+    /* Reserve space for border */
+    border-radius: 4px;
+    padding: 4px;
+    transition: all 0.2s ease;
+}
+
+.table-editor.active {
+    border-color: var(--color-border);
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.table-title-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    padding: 8px 4px;
+    margin-bottom: 8px;
+    outline: none;
+    display: block;
+    /* Ensure it takes width */
+}
+
+.table-title-input:focus,
+.header-input:focus,
+.cell-input:focus {
+    color: var(--color-text-primary);
+    /* Ensure visible on focus */
+}
+
+.table-wrapper {
+    margin-bottom: 10px;
+    overflow-x: auto;
+    max-width: 100%;
+    /* Constrain to parent width */
+}
+
+.table-editor table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--color-border);
+    table-layout: fixed;
+    /* Fixes "wrong way" resizing and instability */
+}
+
+.table-editor th,
+.table-editor td {
+    border: 1px solid var(--color-border);
+    padding: 0;
+    min-width: 150px;
+}
+
+.table-editor th {
+    background-color: var(--color-bg-secondary);
+    position: relative;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+}
+
+.table-editor th.delete-candidate {
+    background-color: rgba(255, 68, 68, 0.15) !important;
+    border-color: #ff4444;
+}
+
+.table-editor td.delete-candidate {
+    background-color: rgba(255, 68, 68, 0.05) !important;
+}
+
+.table-editor tr.delete-candidate td {
+    background-color: rgba(255, 68, 68, 0.05) !important;
+    border-top: 1px solid #ff4444;
+    border-bottom: 1px solid #ff4444;
+}
+
+.remove-col-btn.confirm-delete,
+.remove-row-btn.confirm-delete {
+    color: #ff4444;
+    background-color: rgba(255, 68, 68, 0.1);
+    animation: pulse-red 1s infinite;
+}
+
+@keyframes pulse-red {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.remove-col-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.3;
+    transition: all 0.2s;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    /* Ensure square */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    margin-left: 4px;
+    /* Spacing from input */
+    flex-shrink: 0;
+    /* Don't squash */
+}
+
+.remove-col-btn:hover {
+    background-color: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+.th-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Push inputs left, X/handle right */
+    padding: 6px 8px;
+    height: 100%;
+    min-height: 40px;
+    /* Ensure height for dragging */
+}
+
+.header-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    width: 100%;
+    outline: none;
+    min-width: 50px;
+    /* Prevent collapse */
+    margin-right: 4px;
+}
+
+/* Adjust resizer position */
+.col-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    /* slightly wider touch target */
+    height: 100%;
+    cursor: col-resize;
+    z-index: 10;
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+
+.col-resizer:hover,
+.col-resizer:active {
+    background-color: var(--color-accent);
+}
+
+.cell-input {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-primary);
+    outline: none;
+    font-family: inherit;
+    resize: none;
+    /* Disable manual resize handle */
+    overflow: hidden;
+    /* Hide scrollbars */
+    min-height: 38px;
+    box-sizing: border-box;
+    display: block;
+    line-height: 1.4;
+}
+
+.cell-input:focus,
+.header-input:focus {
+    background-color: var(--color-bg-hover);
+}
+
+.add-col-th {
+    width: 30px;
+    min-width: 30px !important;
+    max-width: 30px !important;
+    padding: 0;
+    text-align: center;
+    border: none;
+    background: transparent;
+    vertical-align: middle;
+}
+
+.row-actions {
+    width: 30px;
+    min-width: 30px !important;
+    max-width: 30px !important;
+    border: none !important;
+    background: transparent;
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.add-btn,
+.remove-row-btn {
+    /* remove-col-btn is handled separately above */
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    /* width: 100%;  <-- REMOVED to allow specific widths */
+    height: 100%;
+    padding: 2px;
+    opacity: 0.3;
+    /* Subtle by default */
+}
+
+.table-editor.active .add-btn,
+.table-editor.active .remove-row-btn {
+    opacity: 0.6;
+}
+
+.table-editor.active .add-btn:hover,
+.table-editor.active .remove-row-btn:hover {
+    opacity: 1;
+}
+
+/* Hide add buttons when not active */
+.add-col-th:not(.visible) .add-btn,
+.row-actions:not(.visible) .remove-row-btn,
+.add-row-btn:not(.visible) {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.add-btn:hover {
+    color: var(--color-accent);
+}
+
+.remove-col-btn:hover,
+.remove-row-btn:hover {
+    color: #ff4444;
+}
+
+.add-row-btn {
+    width: 100%;
+    padding: 8px;
+    background-color: var(--color-bg-secondary);
+    border: 1px dashed var(--color-border);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.add-row-btn:hover {
+    background-color: var(--color-bg-hover);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}

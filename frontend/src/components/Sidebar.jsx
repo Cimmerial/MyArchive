@@ -12,6 +12,8 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [moveTarget, setMoveTarget] = useState(null);
     const [moveParentId, setMoveParentId] = useState(null);
+    const [sidebarWidth, setSidebarWidth] = useState(parseInt(localStorage.getItem('sidebar-width') || '300'));
+    const [isResizing, setIsResizing] = useState(false);
     const navigate = useNavigate();
 
     // Auto-expand all pages by default
@@ -19,6 +21,38 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
         const allPageIds = allPages.map(p => p.id);
         setExpandedPages(new Set(allPageIds));
     }, [allPages]);
+
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (!isResizing) return;
+            const newWidth = Math.max(200, Math.min(600, e.clientX));
+            setSidebarWidth(newWidth);
+        };
+
+        const handleMouseUp = () => {
+            if (isResizing) {
+                setIsResizing(false);
+                localStorage.setItem('sidebar-width', sidebarWidth);
+            }
+        };
+
+        if (isResizing) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        } else {
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+    }, [isResizing, sidebarWidth]);
 
     const toggleExpanded = (pageId) => {
         const newExpanded = new Set(expandedPages);
@@ -157,26 +191,29 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
     };
 
     return (
-        <aside className="sidebar">
+        <aside className="sidebar" style={{ width: sidebarWidth }}>
             <div className="sidebar-header">
                 <SearchBar projectId={projectId} />
-                <button
-                    className="btn-primary"
-                    onClick={() => {
-                        setNewPageParent(null);
-                        setShowCreateModal(true);
-                    }}
-                >
-                    + New Page
-                </button>
-                {project && (
+                <div className="sidebar-buttons-row">
                     <button
-                        className={`btn-secondary sidebar-main-page-btn ${currentPage?.id === 'main' ? 'active' : ''}`}
-                        onClick={() => navigate(`/project/${projectId}`)}
+                        className="btn-primary"
+                        onClick={() => {
+                            setNewPageParent(null);
+                            setShowCreateModal(true);
+                        }}
                     >
-                        {project.display_name} Main Page
+                        + Page
                     </button>
-                )}
+                    {project && (
+                        <button
+                            className={`btn-secondary sidebar-main-page-btn ${currentPage?.id === 'main' ? 'active' : ''}`}
+                            onClick={() => navigate(`/project/${projectId}`)}
+                            title={`${project.display_name} Main Page`}
+                        >
+                            Home
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="page-tree">
@@ -274,6 +311,10 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
                     onCancel={() => setDeleteTarget(null)}
                 />
             )}
+            <div
+                className="sidebar-resizer"
+                onMouseDown={() => setIsResizing(true)}
+            />
         </aside>
     );
 }

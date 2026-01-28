@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Header.css';
 
 function Header({ project, currentPage, allPages }) {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [currentFont, setCurrentFont] = useState(localStorage.getItem('app-font') || 'Inter');
+    const navigate = useNavigate();
 
     useEffect(() => {
         // Apply font on mount and change
@@ -59,7 +60,7 @@ function Header({ project, currentPage, allPages }) {
         <header className="wiki-header">
             <div className="header-left">
                 <div className="breadcrumbs">
-                    <Link to="/" className="breadcrumb-item">MyArchive</Link>
+                    <Link to="/" className="breadcrumb-item">Myrchive</Link>
 
                     {project && (
                         <>
@@ -85,6 +86,14 @@ function Header({ project, currentPage, allPages }) {
             </div>
 
             <div className="header-right">
+                <div className="nav-controls">
+                    <button className="nav-btn" onClick={() => navigate(-1)} title="Go Back">
+                        ←
+                    </button>
+                    <button className="nav-btn" onClick={() => navigate(1)} title="Go Forward">
+                        →
+                    </button>
+                </div>
                 <div className="settings-container" onClick={e => e.stopPropagation()}>
                     <button
                         className={`settings-btn ${isSettingsOpen ? 'active' : ''}`}

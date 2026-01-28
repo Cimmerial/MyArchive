@@ -67,8 +67,8 @@ function ProjectSelection() {
         <div className="project-selection">
             <div className="project-container">
                 <header className="project-header">
-                    <h1>MyArchive</h1>
-                    <p className="text-muted">Your personal knowledge wiki</p>
+                    <h1>Myrchive</h1>
+                    <p className="text-muted">My personal knowledge wiki</p>
                 </header>
 
                 <form className="create-project-form" onSubmit={createProject}>

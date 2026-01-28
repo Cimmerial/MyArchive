@@ -134,7 +134,7 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
             <div className="page-content-inner">
                 {isMainPage ? (
                     <>
-                        <h1 className="project-main-header">Project Main Page</h1>
+                        <h1 className="project-main-header">Project Home Page</h1>
                         {/* Main page doesn't really track update time in same way, skipping or adding if needed */}
 
                         <div className="child-pages-section">
@@ -224,6 +224,9 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
                     </button>
                     <button className="btn-secondary" onClick={() => handleAddCell('subheader')}>
                         + Subheader
+                    </button>
+                    <button className="btn-secondary" onClick={() => handleAddCell('table')}>
+                        + Table
                     </button>
                 </div>
 

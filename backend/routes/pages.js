@@ -3,6 +3,10 @@ import { getProjectDb, getMetaDb } from '../db.js';
 
 const router = express.Router();
 
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
  * Middleware to validate project exists
  */
@@ -147,20 +151,7 @@ router.post('/:projectId/pages', validateProject, (req, res) => {
 
         const pageId = result.lastInsertRowid;
 
-        // Convert title to camelCase for summary header
-        const toCamelCase = (str) => {
-            return str
-                .split(' ')
-                .map((word, index) => {
-                    if (index === 0) {
-                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-                    }
-                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-                })
-                .join(' ');
-        };
-
-        const summaryHeader = `${toCamelCase(title)} Summary`;
+        const summaryHeader = 'Summary';
 
         // Create default summary header cell
         req.projectDb.prepare(
@@ -259,6 +250,33 @@ router.put('/:projectId/pages/:pageId', validateProject, (req, res) => {
 router.delete('/:projectId/pages/:pageId', validateProject, (req, res) => {
     try {
         const { pageId } = req.params;
+
+        // UNLINKING LOGIC: Find all links to this page and revert them to text
+        const page = req.projectDb.prepare('SELECT title FROM pages WHERE id = ?').get(pageId);
+        if (page) {
+            // Find all links targeting this page
+            const links = req.projectDb.prepare('SELECT * FROM links WHERE target_page_id = ?').all(pageId);
+
+            for (const link of links) {
+                // Get the cell content
+                const cell = req.projectDb.prepare('SELECT content FROM cells WHERE id = ?').get(link.cell_id);
+                if (cell) {
+                    // Regex to replace [[Page Title]] with Page Title case-insensitive
+                    // We simply remove the brackets.
+                    // Note: If there are multiple links in one cell, this regex should handle them if global?
+                    // Actually, let's look for the specific link we tracked? 
+                    // But the link table doesn't store the exact text match in cell, just link_text.
+                    // The safest way is to replace `[[Title]]` with `Title`.
+
+                    const pattern = new RegExp(`\\[\\[${escapeRegExp(page.title)}\\]\\]`, 'gi');
+                    const newContent = cell.content.replace(pattern, page.title);
+
+                    if (newContent !== cell.content) {
+                        req.projectDb.prepare('UPDATE cells SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newContent, link.cell_id);
+                    }
+                }
+            }
+        }
 
         const result = req.projectDb.prepare('DELETE FROM pages WHERE id = ?').run(pageId);
 

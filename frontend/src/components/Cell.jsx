@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import axios from 'axios';
 import LinkContextMenu from './LinkContextMenu';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import TableEditor from './TableEditor';
 import './Cell.css';
 
 function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreatePage, autoFocus }) {
@@ -62,16 +63,26 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
         setType(cell.type);
     }, [cell.content, cell.type]);
 
-    const handleBlur = () => {
-        // Don't save if context menu is open to prevent clearing content
-        if (isContextMenuOpen) {
+    const handleBlur = (e) => {
+        // Don't save if context menu is open
+        if (isContextMenuOpen) return;
+
+        // Check if focus is moving to a child of the current cell (e.g. table inputs)
+        // e.relatedTarget is where focus went
+        if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget)) {
             return;
         }
 
-        const newContent = contentRef.current.innerHTML;
-        if (newContent !== content) {
-            setContent(newContent);
-            onUpdate(cell.id, { content: newContent });
+        if (type === 'table') {
+            if (content !== cell.content) {
+                onUpdate(cell.id, { content: content });
+            }
+        } else {
+            const newContent = contentRef.current.innerHTML;
+            if (newContent !== content) {
+                setContent(newContent);
+                onUpdate(cell.id, { content: newContent });
+            }
         }
     };
 
@@ -106,6 +117,8 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
     };
 
     const handleInput = () => {
+        if (type === 'table') return;
+
         // Auto-link ALL CAPS words and phrases
         const html = contentRef.current.innerHTML;
         // Match one or more consecutive ALL CAPS words (e.g., "BLACK HOLES")
@@ -402,19 +415,26 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
     return (
         <>
             <div ref={setNodeRef} style={style} className="cell-container">
-                <div className="cell-content-wrapper">
-                    <div
-                        ref={contentRef}
-                        className={`cell-content ${getClassName()}`}
-                        contentEditable
-                        suppressContentEditableWarning
-                        onBlur={handleBlur}
-                        onKeyDown={handleKeyDown}
-                        onInput={handleInput}
-                        onClick={handleClick}
-                        onContextMenu={handleContextMenu}
-                        dangerouslySetInnerHTML={{ __html: content }}
-                    />
+                <div className="cell-content-wrapper" onBlur={handleBlur}>
+                    {type === 'table' ? (
+                        <TableEditor
+                            content={content}
+                            onChange={(newContent) => setContent(newContent)}
+                            readOnly={false}
+                        />
+                    ) : (
+                        <div
+                            ref={contentRef}
+                            className={`cell-content ${getClassName()}`}
+                            contentEditable
+                            suppressContentEditableWarning
+                            onKeyDown={handleKeyDown}
+                            onInput={handleInput}
+                            onClick={handleClick}
+                            onContextMenu={handleContextMenu}
+                            dangerouslySetInnerHTML={{ __html: content }}
+                        />
+                    )}
                 </div>
 
                 <div className="cell-controls-right">
@@ -426,7 +446,7 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                             onClick={() => setIsTypeMenuOpen(!isTypeMenuOpen)}
                             title="Change type"
                         >
-                            {type === 'header' ? 'H1' : type === 'subheader' ? 'H2' : 'T'}
+                            {type === 'header' ? 'H1' : type === 'subheader' ? 'H2' : type === 'table' ? 'TBL' : 'T'}
                         </div>
 
                         {isTypeMenuOpen && (
@@ -448,6 +468,12 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                                     onClick={() => { handleTypeChange('subheader'); setIsTypeMenuOpen(false); }}
                                 >
                                     Subheader
+                                </div>
+                                <div
+                                    className="cell-type-option"
+                                    onClick={() => { handleTypeChange('table'); setIsTypeMenuOpen(false); }}
+                                >
+                                    Table
                                 </div>
                             </div>
                         )}

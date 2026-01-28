@@ -32,7 +32,7 @@ function DeleteConfirmModal({ itemType, itemName, onConfirm, onCancel }) {
                     {itemType === 'page' && ' This will also delete all child pages and cells.'}
                 </p>
                 <p className="delete-instruction text-muted">
-                    Type <strong>DELETE</strong> to confirm:
+                    Type <strong className="delete-confirm-word" onClick={() => setConfirmText('DELETE')}>DELETE</strong> to confirm:
                 </p>
                 <form onSubmit={handleSubmit}>
                     <input
@@ -62,3 +62,6 @@ function DeleteConfirmModal({ itemType, itemName, onConfirm, onCancel }) {
 }
 
 export default DeleteConfirmModal;
+
+/* Inline style for the clickable delete word - or better, added to CSS file if possible, but this works for now */
+/* Ideally this should go into DeleteConfirmModal.css but the user sent the JSX file. I will modify the CSS file separately or assume user accepts inline changes */

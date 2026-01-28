@@ -1,17 +1,47 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './Header.css';
 
 function Header({ project, currentPage, allPages }) {
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [currentFont, setCurrentFont] = useState(localStorage.getItem('app-font') || 'Inter');
+
+    useEffect(() => {
+        // Apply font on mount and change
+        document.body.style.fontFamily = getFontFamily(currentFont);
+        localStorage.setItem('app-font', currentFont);
+
+        // Close settings when clicking outside
+        const handleClickOutside = () => setIsSettingsOpen(false);
+        if (isSettingsOpen) {
+            document.addEventListener('click', handleClickOutside);
+        }
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [currentFont, isSettingsOpen]);
+
+    const getFontFamily = (fontName) => {
+        switch (fontName) {
+            case 'Inter': return '"Inter", system-ui, sans-serif';
+            case 'Roboto': return '"Roboto", sans-serif';
+            case 'Serif': return 'Georgia, serif';
+            case 'Mono': return 'monospace';
+            default: return '"Inter", system-ui, sans-serif';
+        }
+    };
+
     const buildBreadcrumbs = () => {
         if (!currentPage) return [];
 
         const crumbs = [];
         let page = currentPage;
 
-        // Skip adding the main page to crumbs as it's already shown via the project name link
+        // Skip adding the main page directly if we handle it separately,
+        // but user might want to see layout structure. 
+        // Logic: Main Page -> Parent -> Child
+
+        // If current is main, we don't show it in crumbs (project title is enough)
         if (page.id === 'main') return [];
 
-        // Build breadcrumb trail
         while (page) {
             crumbs.unshift(page);
             if (page.parent_id) {
@@ -20,7 +50,6 @@ function Header({ project, currentPage, allPages }) {
                 page = null;
             }
         }
-
         return crumbs;
     };
 
@@ -28,29 +57,62 @@ function Header({ project, currentPage, allPages }) {
 
     return (
         <header className="wiki-header">
-            <div className="breadcrumbs">
-                <Link to="/" className="breadcrumb-item">
-                    MyArchive
-                </Link>
-                {project && (
-                    <>
-                        <span className="breadcrumb-separator">›</span>
-                        <Link to={`/project/${project.id}`} className="breadcrumb-item">
-                            {project.display_name}
-                        </Link>
-                    </>
-                )}
-                {breadcrumbs.map((page, index) => (
-                    <span key={page.id}>
-                        <span className="breadcrumb-separator">›</span>
-                        <Link
-                            to={`/project/${project.id}/page/${page.id}`}
-                            className={`breadcrumb-item ${index === breadcrumbs.length - 1 ? 'active' : ''}`}
-                        >
-                            {page.title}
-                        </Link>
-                    </span>
-                ))}
+            <div className="header-left">
+                <div className="breadcrumbs">
+                    <Link to="/" className="breadcrumb-item">MyArchive</Link>
+
+                    {project && (
+                        <>
+                            <span className="breadcrumb-separator">›</span>
+                            <Link to={`/project/${project.id}`} className="breadcrumb-item">
+                                {project.display_name}
+                            </Link>
+                        </>
+                    )}
+
+                    {breadcrumbs.map((page, index) => (
+                        <span key={page.id} className="breadcrumb-container">
+                            <span className="breadcrumb-separator">›</span>
+                            <Link
+                                to={`/project/${project.id}/page/${page.id}`}
+                                className={`breadcrumb-item ${index === breadcrumbs.length - 1 ? 'active' : ''}`}
+                            >
+                                {page.title}
+                            </Link>
+                        </span>
+                    ))}
+                </div>
+            </div>
+
+            <div className="header-right">
+                <div className="settings-container" onClick={e => e.stopPropagation()}>
+                    <button
+                        className={`settings-btn ${isSettingsOpen ? 'active' : ''}`}
+                        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                        title="Settings"
+                    >
+                        ⚙
+                    </button>
+
+                    {isSettingsOpen && (
+                        <div className="settings-dropdown">
+                            <div className="settings-section">
+                                <h4>Font Family</h4>
+                                <div className="font-options">
+                                    {['Inter', 'Roboto', 'Serif', 'Mono'].map(font => (
+                                        <div
+                                            key={font}
+                                            className={`font-option ${currentFont === font ? 'active' : ''}`}
+                                            onClick={() => setCurrentFont(font)}
+                                        >
+                                            {font}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </header>
     );

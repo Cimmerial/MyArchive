@@ -7,7 +7,7 @@ import LinkContextMenu from './LinkContextMenu';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import './Cell.css';
 
-function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreatePage }) {
+function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreatePage, autoFocus }) {
     const [content, setContent] = useState(cell.content);
     const [type, setType] = useState(cell.type);
     const [showContextMenu, setShowContextMenu] = useState(false);
@@ -18,6 +18,7 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
     const [newPageParent, setNewPageParent] = useState(null);
     const [savedRange, setSavedRange] = useState(null);
     const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
+    const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
     const contentRef = useRef(null);
     const navigate = useNavigate();
 
@@ -33,6 +34,24 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
         transform: CSS.Transform.toString(transform),
         transition,
     };
+
+    // Auto-focus logic
+    useEffect(() => {
+        if (autoFocus && contentRef.current) {
+            contentRef.current.focus();
+            // Optional: place cursor at end if there's content (though new cells are usually empty)
+            try {
+                const range = document.createRange();
+                const selection = window.getSelection();
+                range.selectNodeContents(contentRef.current);
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            } catch (e) {
+                // Ignore
+            }
+        }
+    }, [autoFocus]);
 
     useEffect(() => {
         // Only update if prop content is different from both our state and the actual DOM
@@ -168,51 +187,100 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
         }
     };
 
+    const restoreCursorToEnd = () => {
+        try {
+            const newRange = document.createRange();
+            const newSelection = window.getSelection();
+            newRange.selectNodeContents(contentRef.current);
+            newRange.collapse(false); // Collapse to end
+            newSelection.removeAllRanges();
+            newSelection.addRange(newRange);
+        } catch (e) {
+            console.error('Failed to restore cursor:', e);
+        }
+    };
+
     const handleContextMenu = (e) => {
         e.preventDefault();
-
         const selection = window.getSelection();
         const text = selection.toString().trim();
 
-        if (text) {
-            // Save content before opening context menu
-            const currentContent = contentRef.current.innerHTML;
-            if (currentContent !== content) {
-                setContent(currentContent);
-                onUpdate(cell.id, { content: currentContent });
-            }
+        if (text && selection.rangeCount > 0) {
+            try {
+                // MARKER STRATEGY: Wrap selection in a temporary span
+                const range = selection.getRangeAt(0);
+                const marker = document.createElement('span');
+                marker.className = 'temp-link-marker';
+                marker.textContent = text;
 
-            setIsContextMenuOpen(true);
-            setSelectedText(text);
-            setContextMenuPos({ x: e.clientX, y: e.clientY });
-            setShowContextMenu(true);
+                // Use delete + insert to safely replace content
+                range.deleteContents();
+                range.insertNode(marker);
+
+                // Update local content state to include the marker (persists across re-renders)
+                // We do NOT call onUpdate yet to avoid saving temporary marker to DB
+                setContent(contentRef.current.innerHTML);
+
+                setSelectedText(text);
+                setContextMenuPos({ x: e.clientX, y: e.clientY });
+                setIsContextMenuOpen(true);
+                setShowContextMenu(true);
+            } catch (error) {
+                console.error('Failed to create selection marker:', error);
+                // Fallback to simple selection if complex wrapping fails?
+                // For now, just don't open menu to avoid breaking things
+            }
         }
+    };
+
+    const cleanupMarker = (html) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const markers = tempDiv.getElementsByClassName('temp-link-marker');
+        while (markers.length > 0) {
+            const marker = markers[0];
+            const parent = marker.parentNode;
+            while (marker.firstChild) {
+                parent.insertBefore(marker.firstChild, marker);
+            }
+            parent.removeChild(marker);
+        }
+        return tempDiv.innerHTML;
     };
 
     const handleLinkSelect = (page) => {
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            const linkHtml = `<a href="#" class="wiki-link" data-page-id="${page.id}">${selectedText}</a>`;
+        // Find the marker in the current content
+        const currentHtml = contentRef.current.innerHTML;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = currentHtml;
 
-            range.deleteContents();
-            const temp = document.createElement('div');
-            temp.innerHTML = linkHtml;
-            range.insertNode(temp.firstChild);
+        const marker = tempDiv.querySelector('.temp-link-marker');
+        if (marker) {
+            const link = document.createElement('a');
+            link.href = '#';
+            link.className = 'wiki-link';
+            link.setAttribute('data-page-id', page.id);
+            link.textContent = selectedText; // Use the original selected text
 
-            handleBlur();
+            marker.replaceWith(link);
+
+            const newHtml = tempDiv.innerHTML;
+            setContent(newHtml);
+            onUpdate(cell.id, { content: newHtml });
+        } else {
+            console.error('Link marker lost');
+            // Fallback: cleanup
+            const cleanHtml = cleanupMarker(currentHtml);
+            setContent(cleanHtml);
         }
+
         setShowContextMenu(false);
         setIsContextMenuOpen(false);
+        // Ensure DOM update finishes before moving cursor
+        setTimeout(restoreCursorToEnd, 0);
     };
 
     const handleCreateNewPage = () => {
-        // Save the current selection range
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
-            setSavedRange(selection.getRangeAt(0).cloneRange());
-        }
-
         setShowContextMenu(false);
         setShowCreatePageModal(true);
     };
@@ -224,23 +292,39 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
             const newPage = await onCreatePage(selectedText, newPageParent);
 
             const currentHtml = contentRef.current.innerHTML;
-            const linkHtml = `<a href="#" class="wiki-link" data-page-id="${newPage.id}">${selectedText}</a>`;
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = currentHtml;
 
-            const newHtml = currentHtml.replace(selectedText, linkHtml);
-            contentRef.current.innerHTML = newHtml;
+            const marker = tempDiv.querySelector('.temp-link-marker');
+            if (marker) {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.className = 'wiki-link';
+                link.setAttribute('data-page-id', newPage.id);
+                link.textContent = selectedText;
 
-            // Update local state and parent immediately
-            setContent(newHtml);
-            onUpdate(cell.id, { content: newHtml });
+                marker.replaceWith(link);
+
+                const newHtml = tempDiv.innerHTML;
+                setContent(newHtml);
+                onUpdate(cell.id, { content: newHtml });
+            } else {
+                // Fallback
+                const cleanHtml = cleanupMarker(currentHtml);
+                setContent(cleanHtml);
+            }
 
             // Reset state
             setShowCreatePageModal(false);
             setNewPageParent(null);
-            setSavedRange(null);
             setIsContextMenuOpen(false);
+            setTimeout(restoreCursorToEnd, 0);
         } catch (error) {
             console.error('Failed to create page and link:', error);
             alert('Failed to create page');
+            // Cleanup marker on failure
+            const cleanHtml = cleanupMarker(contentRef.current.innerHTML);
+            setContent(cleanHtml);
             setIsContextMenuOpen(false);
         }
     };
@@ -259,21 +343,7 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
     return (
         <>
             <div ref={setNodeRef} style={style} className="cell-container">
-                <div className="cell-drag-handle" {...attributes} {...listeners}>
-                    ⋮⋮
-                </div>
-
                 <div className="cell-content-wrapper">
-                    <select
-                        className="cell-type-selector"
-                        value={type}
-                        onChange={(e) => handleTypeChange(e.target.value)}
-                    >
-                        <option value="text">Text</option>
-                        <option value="header">Header</option>
-                        <option value="subheader">Subheader</option>
-                    </select>
-
                     <div
                         ref={contentRef}
                         className={`cell-content ${getClassName()}`}
@@ -286,6 +356,52 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                         onContextMenu={handleContextMenu}
                         dangerouslySetInnerHTML={{ __html: content }}
                     />
+                </div>
+
+                <div className="cell-controls-right">
+                    <div className="cell-type-dropdown" onClick={(e) => {
+                        e.stopPropagation();
+                    }}>
+                        <div
+                            className="cell-type-trigger"
+                            onClick={() => setIsTypeMenuOpen(!isTypeMenuOpen)}
+                            title="Change type"
+                        >
+                            {type === 'header' ? 'H1' : type === 'subheader' ? 'H2' : 'T'}
+                        </div>
+
+                        {isTypeMenuOpen && (
+                            <div className="cell-type-menu">
+                                <div
+                                    className="cell-type-option"
+                                    onClick={() => { handleTypeChange('text'); setIsTypeMenuOpen(false); }}
+                                >
+                                    Text
+                                </div>
+                                <div
+                                    className="cell-type-option"
+                                    onClick={() => { handleTypeChange('header'); setIsTypeMenuOpen(false); }}
+                                >
+                                    Header
+                                </div>
+                                <div
+                                    className="cell-type-option"
+                                    onClick={() => { handleTypeChange('subheader'); setIsTypeMenuOpen(false); }}
+                                >
+                                    Subheader
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div
+                        className="cell-drag-handle"
+                        {...attributes}
+                        {...listeners}
+                        title="Drag to move"
+                    >
+                        ⋮⋮
+                    </div>
 
                     <button
                         className="cell-delete-btn"
@@ -306,6 +422,15 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                     onClose={() => {
                         setShowContextMenu(false);
                         setIsContextMenuOpen(false);
+                        setIsTypeMenuOpen(false);
+                        // Cleanup marker if menu is closed without action
+                        if (contentRef.current) {
+                            const cleanHtml = cleanupMarker(contentRef.current.innerHTML);
+                            if (cleanHtml !== content) {
+                                setContent(cleanHtml);
+                                // No onUpdate needed as we just reverted visual state
+                            }
+                        }
                     }}
                     onSelectPage={handleLinkSelect}
                     onCreateNew={handleCreateNewPage}

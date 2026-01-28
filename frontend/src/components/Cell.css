@@ -1,30 +1,111 @@
 .cell-container {
     display: flex;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius-md);
-    transition: background-color var(--transition-fast);
-}
-
-.cell-container:hover {
-    background-color: var(--color-bg-secondary);
-}
-
-.cell-drag-handle {
-    width: 24px;
-    display: flex;
     align-items: flex-start;
-    justify-content: center;
-    padding-top: var(--spacing-sm);
-    color: var(--color-text-muted);
-    cursor: grab;
-    user-select: none;
-    opacity: 0;
-    transition: opacity var(--transition-fast);
+    padding: 0.5rem 0;
+    position: relative;
+    gap: 0.5rem;
 }
 
-.cell-container:hover .cell-drag-handle {
+/* Controls wrapper - Right side */
+.cell-controls-right {
+    display: flex;
+    flex-direction: row;
+    /* Horizontal alignment */
+    align-items: center;
+    gap: 0.75rem;
+    /* Increased spacing */
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    flex-shrink: 0;
+    margin-top: 4px;
+    /* Align with text top */
+    padding-left: 0.5rem;
+    /* Padding on the right */
+}
+
+.cell-container:hover .cell-controls-right,
+.cell-container:focus-within .cell-controls-right {
+    opacity: 1;
+}
+
+/* Custom Dropdown */
+.cell-type-dropdown {
+    position: relative;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    /* More subtle color */
+    user-select: none;
+}
+
+.cell-type-trigger {
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    font-weight: 500;
+    /* Less bold */
+    background-color: transparent;
+    /* Transparent background */
+    border: 1px solid transparent;
+    /* No border by default */
+    transition: all 0.2s ease;
+}
+
+.cell-type-trigger:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-primary);
+    border-color: var(--color-border);
+    /* Border on hover */
+}
+
+.cell-type-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    /* Align right to avoid overflow */
+    margin-top: 4px;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    min-width: 100px;
+    overflow: hidden;
+}
+
+.cell-type-option {
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.cell-type-option:hover {
+    background-color: var(--color-accent);
+    color: #1a1a1a;
+}
+
+/* Drag Handle */
+.cell-drag-handle {
+    cursor: grab;
+    color: var(--color-text-muted);
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    height: 24px;
+    opacity: 0.6;
+    /* More subtle */
+}
+
+.cell-drag-handle:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-hover);
     opacity: 1;
 }
 
@@ -32,86 +113,54 @@
     cursor: grabbing;
 }
 
-.cell-content-wrapper {
-    flex: 1;
-    display: flex;
-    gap: var(--spacing-sm);
-    align-items: flex-start;
-}
-
-.cell-type-selector {
-    flex-shrink: 0;
-    font-size: var(--font-size-sm);
-    padding: var(--spacing-xs) var(--spacing-sm);
-    opacity: 0;
-    transition: opacity var(--transition-fast);
-    order: 2;
-}
-
-.cell-container:hover .cell-type-selector {
-    opacity: 1;
-}
-
-.cell-content {
-    flex: 1;
-    outline: none;
-    min-height: 24px;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--border-radius-sm);
-    transition: background-color var(--transition-fast);
-    order: 1;
-}
-
-.cell-content:focus {
-    background-color: var(--color-bg-secondary);
-}
-
-.cell-content:empty:before {
-    content: 'Type something...';
-    color: var(--color-text-muted);
-}
-
-.cell-header {
-    font-size: var(--font-size-xl);
-    font-weight: 700;
-    color: var(--color-accent);
-}
-
-.cell-subheader {
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    color: var(--color-text-primary);
-}
-
-.cell-text {
-    font-size: var(--font-size-md);
-    color: var(--color-text-primary);
-    line-height: 1.8;
-}
-
+/* Delete Button */
 .cell-delete-btn {
-    width: 20px;
-    height: 20px;
-    border-radius: var(--border-radius-sm);
-    background-color: transparent;
+    background: none;
+    border: none;
     color: var(--color-text-muted);
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
     line-height: 1;
+    opacity: 0.6;
+    transition: color 0.2s, opacity 0.2s;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transition: all var(--transition-fast);
-    flex-shrink: 0;
-    order: 3;
-}
-
-.cell-container:hover .cell-delete-btn {
-    opacity: 1;
+    border-radius: 4px;
 }
 
 .cell-delete-btn:hover {
-    background-color: rgba(255, 68, 68, 0.2);
-    color: #ff4444;
+    color: #ff4d4f;
+    opacity: 1;
+    background-color: rgba(255, 77, 79, 0.1);
+}
+
+/* Content Area */
+.cell-content-wrapper {
+    flex: 1;
+    min-width: 0;
+    /* Enable text wrapping in flex item */
+}
+
+.cell-content {
+    outline: none;
+    min-height: 1.5em;
+    /* Ensure empty cells are clickable */
+    line-height: 1.6;
+    padding: 0 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.cell-content:focus {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Link Marker */
+.temp-link-marker {
+    background-color: rgba(0, 120, 215, 0.3);
+    border-radius: 2px;
 }

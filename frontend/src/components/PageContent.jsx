@@ -81,6 +81,8 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
         }
     };
 
+    const [newlyCreatedCellId, setNewlyCreatedCellId] = useState(null);
+
     const handleAddCell = async (type = 'text') => {
         if (!page) return;
 
@@ -92,6 +94,7 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
                 projectId // Required for 'main' page
             });
             setCells([...cells, response.data]);
+            setNewlyCreatedCellId(response.data.id);
             onCellsChange();
         } catch (error) {
             console.error('Failed to add cell:', error);
@@ -190,6 +193,7 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
                                 onUpdate={handleCellUpdate}
                                 onDelete={handleCellDelete}
                                 onCreatePage={onCreatePage}
+                                autoFocus={cell.id === newlyCreatedCellId}
                             />
                         ))}
                     </SortableContext>

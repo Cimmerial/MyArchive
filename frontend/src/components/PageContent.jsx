@@ -41,6 +41,8 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
     const handleDragEnd = async (event) => {
         const { active, over } = event;
 
+        if (!over) return;
+
         if (active.id !== over.id) {
             const oldIndex = cells.findIndex(c => c.id === active.id);
             const newIndex = cells.findIndex(c => c.id === over.id);
@@ -98,6 +100,49 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
             onCellsChange();
         } catch (error) {
             console.error('Failed to add cell:', error);
+        }
+    };
+
+    const handleInsertCell = async (targetCellId, position, type) => {
+        if (!page) return;
+
+        try {
+            // 1. Create the new cell (appended to end by default)
+            const response = await axios.post(`/api/pages/${page.id}/cells`, {
+                type,
+                content: '',
+                orderIndex: cells.length, // Temporary, will reorder immediately
+                projectId
+            });
+            const newCell = response.data;
+
+            // 2. Calculate new order
+            const targetIndex = cells.findIndex(c => c.id === targetCellId);
+            if (targetIndex === -1) return; // Should not happen
+
+            const newCells = [...cells];
+            // Insert at correct position
+            // If 'before': insert at targetIndex
+            // If 'after': insert at targetIndex + 1
+            const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
+
+            newCells.splice(insertIndex, 0, newCell);
+
+            // 3. Update state immediately for responsiveness
+            setCells(newCells);
+            setNewlyCreatedCellId(newCell.id);
+
+            // 4. Persist order to backend
+            await axios.put(`/api/pages/${page.id}/cells/reorder`, {
+                cellIds: newCells.map(c => c.id),
+                projectId
+            });
+
+            onCellsChange();
+        } catch (error) {
+            console.error('Failed to insert cell:', error);
+            // Revert state if needed, or just let next load fix it
+            // Ideally we'd rollback here but for now just log
         }
     };
 
@@ -210,6 +255,7 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
                                 onDelete={handleCellDelete}
                                 onCreatePage={onCreatePage}
                                 autoFocus={cell.id === newlyCreatedCellId}
+                                onInsert={handleInsertCell}
                             />
                         ))}
                     </SortableContext>

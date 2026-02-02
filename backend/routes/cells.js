@@ -182,7 +182,11 @@ router.put('/pages/:pageId/cells/reorder', getDbFromPage, (req, res) => {
 
         const transaction = req.projectDb.transaction((ids) => {
             ids.forEach((cellId, index) => {
-                updateStmt.run(index, cellId, pageId);
+                // Use req.page.id if available (set by middleware), otherwise parse pageId
+                // For 'main', req.page.id is 0. For others, it's the DB object.
+                // Safest to just replicate the 'main' check here or use req.page.id
+                const targetPageId = pageId === 'main' ? 0 : pageId;
+                updateStmt.run(index, cellId, targetPageId);
             });
         });
 

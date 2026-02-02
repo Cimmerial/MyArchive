@@ -5,6 +5,7 @@ import projectsRouter from './routes/projects.js';
 import pagesRouter from './routes/pages.js';
 import cellsRouter from './routes/cells.js';
 import searchRouter from './routes/search.js';
+import kanbanRouter from './routes/kanban.js';
 
 const app = express();
 const PORT = 3001;
@@ -18,6 +19,7 @@ app.use('/api/projects', projectsRouter);
 app.use('/api/projects', pagesRouter);
 app.use('/api', cellsRouter);
 app.use('/api/projects', searchRouter);
+app.use('/api/projects', kanbanRouter);
 
 // Health check
 app.get('/health', (req, res) => {

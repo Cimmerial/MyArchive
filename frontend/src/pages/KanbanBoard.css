@@ -1,0 +1,300 @@
+.kanban-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.kanban-board-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-bg-primary);
+    overflow: hidden;
+    /* Columns scroll independently */
+    padding: var(--spacing-md);
+}
+
+.kanban-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+    padding: 0 var(--spacing-sm);
+}
+
+.kanban-header h1 {
+    font-size: var(--font-size-xl);
+    color: var(--color-text-primary);
+}
+
+.kanban-columns {
+    display: flex;
+    gap: var(--spacing-md);
+    height: 100%;
+    overflow-x: auto;
+    padding-bottom: var(--spacing-md);
+}
+
+.kanban-column {
+    flex: 1;
+    min-width: 280px;
+    max-width: 350px;
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--border-radius-md);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+}
+
+.column-header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-bg-tertiary);
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+}
+
+.column-header h3 {
+    margin: 0;
+    font-size: var(--font-size-md);
+    color: var(--color-accent);
+}
+
+.count {
+    background-color: var(--color-bg-primary);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.column-tools {
+    padding: var(--spacing-sm);
+    display: flex;
+    gap: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.column-search {
+    flex: 1;
+    padding: 4px 8px;
+    font-size: var(--font-size-sm);
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text-primary);
+}
+
+.btn-icon-add {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-accent);
+    color: var(--color-bg-primary);
+    border-radius: var(--border-radius-sm);
+    font-weight: bold;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.btn-icon-add:hover {
+    background-color: var(--color-accent-hover);
+}
+
+.sortable-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+}
+
+.items-list {
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.empty-drop-zone {
+    height: 100px;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+/* Items */
+.kanban-item {
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm);
+    cursor: grab;
+    transition: box-shadow 0.2s;
+    touch-action: none;
+    /* Required for dnd-kit pointer sensor */
+}
+
+.kanban-item:hover {
+    border-color: var(--color-text-muted);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.kanban-item.dragging {
+    opacity: 0.8;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    cursor: grabbing;
+}
+
+.kanban-item.completed {
+    opacity: 0.7;
+    text-decoration: line-through;
+    border-left: 3px solid #4caf50;
+    /* Green indicator */
+}
+
+.item-header {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 4px;
+}
+
+.item-drag-handle {
+    cursor: grab;
+    color: var(--color-border);
+    user-select: none;
+    touch-action: none;
+    /* Crucial for dnd-kit pointer sensor */
+    padding: 2px 0;
+}
+
+.item-drag-handle:hover {
+    color: var(--color-text-muted);
+}
+
+.item-title-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.item-title {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    word-break: break-word;
+}
+
+/* Check Button */
+.btn-icon-check {
+    color: var(--color-text-muted);
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.btn-icon-check:hover {
+    color: var(--color-text-primary);
+}
+
+.btn-icon-check.checked {
+    color: #4caf50;
+}
+
+.item-controls-hover {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.kanban-item:hover .item-controls-hover {
+    opacity: 1;
+}
+
+.btn-icon-sm {
+    padding: 2px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.btn-icon-sm:hover {
+    color: var(--color-text-primary);
+}
+
+.btn-icon-sm.delete:hover {
+    color: #ff4d4f;
+}
+
+.item-desc {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    white-space: pre-wrap;
+    margin-bottom: 8px;
+}
+
+.wiki-link {
+    color: var(--color-accent);
+    text-decoration: underline;
+}
+
+.wiki-link-broken {
+    color: #ff4d4f;
+}
+
+.item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+    border-top: 1px solid var(--color-border-light);
+    padding-top: 4px;
+}
+
+.item-dates {
+    display: flex;
+    gap: 8px;
+}
+
+/* Edit Form */
+.item-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.item-input {
+    width: 100%;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.item-input.desc {
+    min-height: 60px;
+    font-family: inherit;
+}
+
+.item-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-xs {
+    padding: 2px 8px;
+    font-size: 0.8rem;
+}

@@ -169,6 +169,21 @@ function initializeSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_cells_order ON cells(page_id, order_index);
     CREATE INDEX IF NOT EXISTS idx_links_source ON links(source_page_id);
     CREATE INDEX IF NOT EXISTS idx_links_target ON links(target_page_id);
+
+    CREATE TABLE IF NOT EXISTS kanban_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      column TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      order_index INTEGER NOT NULL,
+      is_archived BOOLEAN DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      completed_at DATETIME
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_kanban_column ON kanban_items(column);
+    CREATE INDEX IF NOT EXISTS idx_kanban_archived ON kanban_items(is_archived);
   `);
 }
 

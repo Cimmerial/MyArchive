@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import ProjectSelection from './pages/ProjectSelection';
 import WikiPage from './pages/WikiPage';
+import KanbanBoard from './pages/KanbanBoard';
 import './index.css';
 
 function App() {
@@ -10,6 +11,7 @@ function App() {
         <Route path="/" element={<ProjectSelection />} />
         <Route path="/project/:projectId" element={<WikiPage />} />
         <Route path="/project/:projectId/page/:pageId" element={<WikiPage />} />
+        <Route path="/project/:projectId/todo" element={<KanbanBoard />} />
       </Routes>
     </BrowserRouter>
   );

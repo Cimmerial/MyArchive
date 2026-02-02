@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import { House, CheckSquare } from 'lucide-react';
 import './Sidebar.css';
 
 function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDeletePage, onUpdatePage }) {
@@ -196,22 +197,32 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
                 <SearchBar projectId={projectId} />
                 <div className="sidebar-buttons-row">
                     <button
-                        className="btn-primary"
+                        className="btn-primary btn-sm-compact"
                         onClick={() => {
                             setNewPageParent(null);
                             setShowCreateModal(true);
                         }}
+                        title="Create New Page"
                     >
-                        + Page
+                        +
                     </button>
                     {project && (
-                        <button
-                            className={`btn-secondary sidebar-main-page-btn ${currentPage?.id === 'main' ? 'active' : ''}`}
-                            onClick={() => navigate(`/project/${projectId}`)}
-                            title={`${project.display_name} Main Page`}
-                        >
-                            Home
-                        </button>
+                        <>
+                            <button
+                                className={`btn-secondary btn-icon ${currentPage?.id === 'main' ? 'active' : ''}`}
+                                onClick={() => navigate(`/project/${projectId}`)}
+                                title={`${project.display_name} Main Page`}
+                            >
+                                <House size={18} />
+                            </button>
+                            <button
+                                className="btn-secondary btn-icon"
+                                onClick={() => navigate(`/project/${projectId}/todo`)}
+                                title="Kanban Board"
+                            >
+                                <CheckSquare size={18} />
+                            </button>
+                        </>
                     )}
                 </div>
             </div>

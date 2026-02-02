@@ -7,7 +7,7 @@
 .page-content-inner {
     max-width: 900px;
     margin: 0 auto;
-    padding: var(--spacing-xl);
+    padding: var(--spacing-lg);
 }
 
 .empty-page {

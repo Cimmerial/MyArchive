@@ -1,26 +1,33 @@
 .cell-container {
     display: flex;
     align-items: flex-start;
-    padding: 0.5rem 0;
+    padding: 0.25rem 0;
+    /* Reduced vertical padding too? User said left/right */
+    /* User asked: decrease padding on the left and right of all the cells */
+    /* The .cell-container had `padding: 0.5rem 0;`. This is top/bottom. */
+    /* The cells themselves might have padding. Let's look at .cell-content. */
+    /* .cell-controls-right had padding-left: 0.5rem. */
+    /* But maybe they meant the page margins? "decrease padding on the left and right of all the cells" */
+    /* Usually this means the content wrapper. */
+    /* Let's adjust .cell-container gap and .cell-content padding */
     position: relative;
-    gap: 0.5rem;
+    gap: 0.25rem;
+    /* Reduced gap */
 }
 
 /* Controls wrapper - Right side */
 .cell-controls-right {
     display: flex;
     flex-direction: row;
-    /* Horizontal alignment */
+    /* Horizontal alignment restored */
     align-items: center;
-    gap: 0.75rem;
-    /* Increased spacing */
+    gap: 0.5rem;
     opacity: 0;
     transition: opacity 0.2s ease;
     flex-shrink: 0;
     margin-top: 4px;
-    /* Align with text top */
-    padding-left: 0.5rem;
-    /* Padding on the right */
+    padding-left: 0.25rem;
+    /* Reduced padding */
 }
 
 /* Show controls on hover or if menu is open */
@@ -151,7 +158,8 @@
     min-height: 1.5em;
     /* Ensure empty cells are clickable */
     line-height: 1.6;
-    padding: 0 4px;
+    padding: 0 2px;
+    /* Reduced from 4px */
     border-radius: 4px;
     transition: background-color 0.2s;
 }
@@ -189,4 +197,85 @@
 .temp-link-marker {
     background-color: rgba(0, 120, 215, 0.3);
     border-radius: 2px;
+}
+
+/* Insert Controls */
+.cell-insert-controls {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    /* Horizontal */
+    gap: 2px;
+    margin-top: 0;
+    /* Reset margin */
+    padding-top: 0;
+    /* Reset padding */
+    border-top: none;
+    /* Remove border */
+    border-left: 1px solid var(--color-border);
+    /* Add vertical separator if desired, or just gap */
+    padding-left: 4px;
+    margin-left: 2px;
+}
+
+.cell-insert-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0 4px;
+    /* Adjust padding for horizontal */
+    line-height: 1;
+    opacity: 0.6;
+    transition: all 0.2s;
+    width: auto;
+    /* Auto width */
+    min-width: 20px;
+    height: 24px;
+    /* Match other controls */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.cell-insert-btn:hover {
+    color: var(--color-accent);
+    opacity: 1;
+    background-color: var(--color-bg-hover);
+}
+
+.cell-insert-menu {
+    position: absolute;
+    top: 100%;
+    /* Below the button */
+    right: 0;
+    /* Align right */
+    margin-top: 4px;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    min-width: 100px;
+    overflow: hidden;
+}
+
+/* We don't need .before/.after specific positioning if we just drop down from the button? 
+   Actually, if the user clicks Insert Above, they might expect the menu to be... somewhere specific?
+   But usually a dropdown just appears. 
+   Let's keep it simple: drop down below the button group.
+*/
+.cell-insert-menu.before {
+    /* No special style needed if valid generic positioning works */
+    right: auto;
+    left: 0;
+}
+
+.cell-insert-menu.after {
+    right: 0;
+    left: auto;
 }

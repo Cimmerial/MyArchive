@@ -8,7 +8,7 @@ import DeleteConfirmModal from './DeleteConfirmModal';
 import TableEditor from './TableEditor';
 import './Cell.css';
 
-function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreatePage, autoFocus }) {
+function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreatePage, autoFocus, onInsert }) {
     const [content, setContent] = useState(cell.content);
     const [type, setType] = useState(cell.type);
     const [showContextMenu, setShowContextMenu] = useState(false);
@@ -20,6 +20,7 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
     const [savedRange, setSavedRange] = useState(null);
     const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
     const [isTypeMenuOpen, setIsTypeMenuOpen] = useState(false);
+    const [insertMenu, setInsertMenu] = useState({ isOpen: false, position: null });
     const contentRef = useRef(null);
     const navigate = useNavigate();
 
@@ -495,8 +496,34 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                     >
                         ×
                     </button>
+
+                    <div className="cell-insert-controls" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            className="cell-insert-btn"
+                            onClick={() => setInsertMenu({ isOpen: !insertMenu.isOpen || insertMenu.position !== 'before', position: 'before' })}
+                            title="Insert cell above"
+                        >
+                            +^
+                        </button>
+                        <button
+                            className="cell-insert-btn"
+                            onClick={() => setInsertMenu({ isOpen: !insertMenu.isOpen || insertMenu.position !== 'after', position: 'after' })}
+                            title="Insert cell below"
+                        >
+                            +v
+                        </button>
+
+                        {insertMenu.isOpen && (
+                            <div className={`cell-insert-menu ${insertMenu.position}`}>
+                                <div className="cell-type-option" onClick={() => { onInsert(cell.id, insertMenu.position, 'text'); setInsertMenu({ isOpen: false, position: null }); }}>Text</div>
+                                <div className="cell-type-option" onClick={() => { onInsert(cell.id, insertMenu.position, 'header'); setInsertMenu({ isOpen: false, position: null }); }}>Header</div>
+                                <div className="cell-type-option" onClick={() => { onInsert(cell.id, insertMenu.position, 'subheader'); setInsertMenu({ isOpen: false, position: null }); }}>Subheader</div>
+                                <div className="cell-type-option" onClick={() => { onInsert(cell.id, insertMenu.position, 'table'); setInsertMenu({ isOpen: false, position: null }); }}>Table</div>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            </div >
 
             {showContextMenu && (
                 <LinkContextMenu
@@ -508,6 +535,7 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                         setShowContextMenu(false);
                         setIsContextMenuOpen(false);
                         setIsTypeMenuOpen(false);
+                        setInsertMenu({ isOpen: false, position: null });
                         setEditingLinkNode(null);
 
                         // Cleanup marker if menu is closed without action
@@ -523,57 +551,62 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                     isLink={!!editingLinkNode}
                     onUnlink={handleUnlink}
                 />
-            )}
+            )
+            }
 
-            {showDeleteModal && (
-                <DeleteConfirmModal
-                    itemType="cell"
-                    itemName={`${type} cell`}
-                    onConfirm={() => {
-                        onDelete(cell.id);
-                        setShowDeleteModal(false);
-                    }}
-                    onCancel={() => setShowDeleteModal(false)}
-                />
-            )}
+            {
+                showDeleteModal && (
+                    <DeleteConfirmModal
+                        itemType="cell"
+                        itemName={`${type} cell`}
+                        onConfirm={() => {
+                            onDelete(cell.id);
+                            setShowDeleteModal(false);
+                        }}
+                        onCancel={() => setShowDeleteModal(false)}
+                    />
+                )
+            }
 
-            {showCreatePageModal && (
-                <div className="modal-overlay" onClick={() => {
-                    setShowCreatePageModal(false);
-                    setIsContextMenuOpen(false);
-                }}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <h3>Create page "{selectedText}"</h3>
-                        <form onSubmit={handleConfirmCreatePage}>
-                            <div className="form-group">
-                                <label>Parent Page (optional)</label>
-                                <select
-                                    value={newPageParent || ''}
-                                    onChange={(e) => setNewPageParent(e.target.value ? parseInt(e.target.value) : null)}
-                                >
-                                    <option value="">Root Level</option>
-                                    {allPages.filter(p => p.id !== pageId).map(page => (
-                                        <option key={page.id} value={page.id}>
-                                            {page.path}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="modal-actions">
-                                <button type="button" className="btn-secondary" onClick={() => {
-                                    setShowCreatePageModal(false);
-                                    setIsContextMenuOpen(false);
-                                }}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="btn-primary">
-                                    Create & Link
-                                </button>
-                            </div>
-                        </form>
+            {
+                showCreatePageModal && (
+                    <div className="modal-overlay" onClick={() => {
+                        setShowCreatePageModal(false);
+                        setIsContextMenuOpen(false);
+                    }}>
+                        <div className="modal" onClick={(e) => e.stopPropagation()}>
+                            <h3>Create page "{selectedText}"</h3>
+                            <form onSubmit={handleConfirmCreatePage}>
+                                <div className="form-group">
+                                    <label>Parent Page (optional)</label>
+                                    <select
+                                        value={newPageParent || ''}
+                                        onChange={(e) => setNewPageParent(e.target.value ? parseInt(e.target.value) : null)}
+                                    >
+                                        <option value="">Root Level</option>
+                                        {allPages.filter(p => p.id !== pageId).map(page => (
+                                            <option key={page.id} value={page.id}>
+                                                {page.path}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="modal-actions">
+                                    <button type="button" className="btn-secondary" onClick={() => {
+                                        setShowCreatePageModal(false);
+                                        setIsContextMenuOpen(false);
+                                    }}>
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="btn-primary">
+                                        Create & Link
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </>
     );
 }

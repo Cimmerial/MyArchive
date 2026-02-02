@@ -198,7 +198,7 @@
 }
 
 .sidebar-main-page-btn {
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs);
     font-weight: 600;
 }
 
@@ -221,4 +221,4 @@
 .sidebar-resizer:hover,
 .sidebar-resizer:active {
     background-color: var(--color-accent);
-}
+}.sidebar-buttons-row > button { min-width: 0; aspect-ratio: 1; text-overflow: ellipsis; overflow: hidden; }

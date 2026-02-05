@@ -9,7 +9,7 @@ Mychive consists of two parts that need to be running simultaneously:
 Open a terminal and run:
 
 ```bash
-cd /Users/gundermutt/Downloads/Non-icloud\ Repos/Mychive/backend
+cd /[YOUR PATH]/backend
 npm run dev
 ```
 
@@ -25,7 +25,7 @@ Mychive backend running on http://localhost:3001
 Open a **second terminal** and run:
 
 ```bash
-cd /Users/gundermutt/Downloads/Non-icloud\ Repos/MyArchive/frontend
+cd /[YOUR PATH]/frontend 
 npm run dev
 ```
 
@@ -65,14 +65,3 @@ To stop Mychive:
 
 1. Go to the terminal running the frontend and press **Ctrl+C**
 2. Go to the terminal running the backend and press **Ctrl+C**
-
----
-
-## Data Storage
-
-All your projects are stored in:
-```
-/Users/gundermutt/Downloads/Non-icloud Repos/Mychive/projects/
-```
-
-Each project has its own folder with a `project.db` file. You can backup or move entire project folders as needed.

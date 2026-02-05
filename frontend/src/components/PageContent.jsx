@@ -52,9 +52,8 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
 
             // Update order on backend
             try {
-                await axios.put(`/api/pages/${page.id}/cells/reorder`, {
-                    cellIds: newCells.map(c => c.id),
-                    projectId // Required for 'main' page
+                await axios.put(`/api/projects/${projectId}/pages/${page.id}/cells/reorder`, {
+                    cellIds: newCells.map(c => c.id)
                 });
                 onCellsChange();
             } catch (error) {
@@ -66,7 +65,7 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
 
     const handleCellUpdate = async (cellId, updates) => {
         try {
-            await axios.put(`/api/cells/${cellId}`, updates);
+            await axios.put(`/api/projects/${projectId}/cells/${cellId}`, updates);
             onCellsChange();
         } catch (error) {
             console.error('Failed to update cell:', error);
@@ -75,7 +74,7 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
 
     const handleCellDelete = async (cellId) => {
         try {
-            await axios.delete(`/api/cells/${cellId}`);
+            await axios.delete(`/api/projects/${projectId}/cells/${cellId}`);
             setCells(cells.filter(c => c.id !== cellId));
             onCellsChange();
         } catch (error) {
@@ -89,11 +88,10 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
         if (!page) return;
 
         try {
-            const response = await axios.post(`/api/pages/${page.id}/cells`, {
+            const response = await axios.post(`/api/projects/${projectId}/pages/${page.id}/cells`, {
                 type,
                 content: '',
-                orderIndex: cells.length,
-                projectId // Required for 'main' page
+                orderIndex: cells.length
             });
             setCells([...cells, response.data]);
             setNewlyCreatedCellId(response.data.id);
@@ -108,11 +106,10 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
 
         try {
             // 1. Create the new cell (appended to end by default)
-            const response = await axios.post(`/api/pages/${page.id}/cells`, {
+            const response = await axios.post(`/api/projects/${projectId}/pages/${page.id}/cells`, {
                 type,
                 content: '',
-                orderIndex: cells.length, // Temporary, will reorder immediately
-                projectId
+                orderIndex: cells.length // Temporary, will reorder immediately
             });
             const newCell = response.data;
 
@@ -133,9 +130,8 @@ function PageContent({ projectId, page, allPages, onPageUpdate, onCellsChange, o
             setNewlyCreatedCellId(newCell.id);
 
             // 4. Persist order to backend
-            await axios.put(`/api/pages/${page.id}/cells/reorder`, {
-                cellIds: newCells.map(c => c.id),
-                projectId
+            await axios.put(`/api/projects/${projectId}/pages/${page.id}/cells/reorder`, {
+                cellIds: newCells.map(c => c.id)
             });
 
             onCellsChange();

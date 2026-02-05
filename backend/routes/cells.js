@@ -7,13 +7,9 @@ const router = express.Router();
  * Middleware to get project database from page ID
  */
 function getDbFromPage(req, res, next) {
-    const { pageId } = req.params;
-    const { projectId } = req.body;
+    const { projectId, pageId } = req.params;
 
     if (pageId === 'main') {
-        if (!projectId) {
-            return res.status(400).json({ error: 'projectId is required for main page operations' });
-        }
         const metaDb = getMetaDb();
         const project = metaDb.prepare('SELECT * FROM projects WHERE id = ?').get(projectId);
         if (project) {
@@ -24,19 +20,19 @@ function getDbFromPage(req, res, next) {
         return res.status(404).json({ error: 'Project not found' });
     }
 
-    // Find which project this page belongs to
     const metaDb = getMetaDb();
-    const projects = metaDb.prepare('SELECT * FROM projects').all();
+    const project = metaDb.prepare('SELECT * FROM projects WHERE id = ?').get(projectId);
 
-    for (const project of projects) {
-        const projectDb = getProjectDb(project.name);
-        const page = projectDb.prepare('SELECT * FROM pages WHERE id = ?').get(pageId);
+    if (!project) {
+        return res.status(404).json({ error: 'Project not found' });
+    }
 
-        if (page) {
-            req.projectDb = projectDb;
-            req.page = page;
-            return next();
-        }
+    req.projectDb = getProjectDb(project.name);
+    const page = req.projectDb.prepare('SELECT * FROM pages WHERE id = ?').get(pageId);
+
+    if (page) {
+        req.page = page;
+        return next();
     }
 
     res.status(404).json({ error: 'Page not found' });
@@ -46,29 +42,30 @@ function getDbFromPage(req, res, next) {
  * Middleware to get project database from cell ID
  */
 function getDbFromCell(req, res, next) {
-    const { cellId } = req.params;
+    const { projectId, cellId } = req.params;
 
     const metaDb = getMetaDb();
-    const projects = metaDb.prepare('SELECT * FROM projects').all();
+    const project = metaDb.prepare('SELECT * FROM projects WHERE id = ?').get(projectId);
 
-    for (const project of projects) {
-        const projectDb = getProjectDb(project.name);
-        const cell = projectDb.prepare('SELECT * FROM cells WHERE id = ?').get(cellId);
+    if (!project) {
+        return res.status(404).json({ error: 'Project not found' });
+    }
 
-        if (cell) {
-            req.projectDb = projectDb;
-            req.cell = cell;
-            return next();
-        }
+    req.projectDb = getProjectDb(project.name);
+    const cell = req.projectDb.prepare('SELECT * FROM cells WHERE id = ?').get(cellId);
+
+    if (cell) {
+        req.cell = cell;
+        return next();
     }
 
     res.status(404).json({ error: 'Cell not found' });
 }
 
 /**
- * POST /api/pages/:pageId/cells - Create new cell
+ * POST /api/projects/:projectId/pages/:pageId/cells - Create new cell
  */
-router.post('/pages/:pageId/cells', getDbFromPage, (req, res) => {
+router.post('/:projectId/pages/:pageId/cells', getDbFromPage, (req, res) => {
     try {
         const { pageId } = req.params;
         const { type, content, orderIndex } = req.body;
@@ -100,9 +97,9 @@ router.post('/pages/:pageId/cells', getDbFromPage, (req, res) => {
 });
 
 /**
- * PUT /api/cells/:cellId - Update cell content
+ * PUT /api/projects/:projectId/cells/:cellId - Update cell content
  */
-router.put('/cells/:cellId', getDbFromCell, (req, res) => {
+router.put('/:projectId/cells/:cellId', getDbFromCell, (req, res) => {
     try {
         const { cellId } = req.params;
         const { type, content } = req.body;
@@ -144,9 +141,9 @@ router.put('/cells/:cellId', getDbFromCell, (req, res) => {
 });
 
 /**
- * DELETE /api/cells/:cellId - Delete cell
+ * DELETE /api/projects/:projectId/cells/:cellId - Delete cell
  */
-router.delete('/cells/:cellId', getDbFromCell, (req, res) => {
+router.delete('/:projectId/cells/:cellId', getDbFromCell, (req, res) => {
     try {
         const { cellId } = req.params;
 
@@ -164,9 +161,9 @@ router.delete('/cells/:cellId', getDbFromCell, (req, res) => {
 });
 
 /**
- * PUT /api/pages/:pageId/cells/reorder - Reorder cells
+ * PUT /api/projects/:projectId/pages/:pageId/cells/reorder - Reorder cells
  */
-router.put('/pages/:pageId/cells/reorder', getDbFromPage, (req, res) => {
+router.put('/:projectId/pages/:pageId/cells/reorder', getDbFromPage, (req, res) => {
     try {
         const { pageId } = req.params;
         const { cellIds } = req.body;
@@ -182,9 +179,6 @@ router.put('/pages/:pageId/cells/reorder', getDbFromPage, (req, res) => {
 
         const transaction = req.projectDb.transaction((ids) => {
             ids.forEach((cellId, index) => {
-                // Use req.page.id if available (set by middleware), otherwise parse pageId
-                // For 'main', req.page.id is 0. For others, it's the DB object.
-                // Safest to just replicate the 'main' check here or use req.page.id
                 const targetPageId = pageId === 'main' ? 0 : pageId;
                 updateStmt.run(index, cellId, targetPageId);
             });

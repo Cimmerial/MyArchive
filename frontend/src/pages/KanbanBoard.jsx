@@ -252,7 +252,17 @@ function SortableItem({ item, onUpdate, onDelete, onContextMenu, allPages, proje
                         {/* Completion Button */}
                         <button
                             className={`btn-icon-check ${isCompleted ? 'checked' : ''}`}
-                            onClick={(e) => { e.stopPropagation(); onUpdate(item.id, { column: isCompleted ? 'Priority Todos' : 'Completed' }); }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (isCompleted) {
+                                    // Restore
+                                    const targetCol = item.original_column || 'Priority Todos';
+                                    onUpdate(item.id, { column: targetCol });
+                                } else {
+                                    // Complete
+                                    onUpdate(item.id, { column: 'Completed', original_column: item.column });
+                                }
+                            }}
                             title={isCompleted ? "Mark as Incomplete" : "Mark as Completed"}
                         >
                             {isCompleted ? <SquareCheckBig size={18} /> : <Square size={18} />}
@@ -481,39 +491,23 @@ function KanbanBoard() {
             // Moving between columns
             setItems(prev => {
                 const activeIndex = prev.findIndex(i => i.id === activeId);
-                // Removed unused activeItem declaration here
+                const overIndex = prev.findIndex(i => i.id === overId);
 
-                // Remove from old position and insert into new position of the "over" item (or end if container)
-                if (COLUMNS.includes(overId)) {
-                    // Dropped on column container (empty or end?)
-                    return prev.map(item => {
-                        if (item.id === activeId) return { ...item, column: overColumn };
-                        return item;
-                    });
-                } else {
-                    // Dropped over another item in a different column
-                    const overIndex = prev.findIndex(i => i.id === overId);
+                // Clone items
+                const newItems = [...prev];
 
-                    const newItems = [...prev];
-                    const [movedItem] = newItems.splice(activeIndex, 1);
-                    movedItem.column = overColumn;
-
-                    let adjustedOverIndex = overIndex;
-                    if (activeIndex < overIndex) {
-                        adjustedOverIndex--;
-                    }
-
-                    // Insert
-                    newItems.splice(adjustedOverIndex >= 0 ? adjustedOverIndex : 0, 0, movedItem);
-
-                    return newItems;
+                // Update column first - this is CRITICAL for the item to be "in" the new column
+                if (activeIndex !== -1) {
+                    newItems[activeIndex] = { ...newItems[activeIndex], column: overColumn };
                 }
-            });
-            // Reordering within the same column
-            setItems(prev => {
-                const activeIndex = prev.findIndex(item => item.id === activeId);
-                const overIndex = prev.findIndex(item => item.id === overId);
-                return arrayMove(prev, activeIndex, overIndex);
+
+                // If dropped on a specific item, move to that position (visual reorder)
+                if (activeIndex !== -1 && overIndex !== -1) {
+                    return arrayMove(newItems, activeIndex, overIndex);
+                }
+
+                // If dropped on a container (empty or end), just column update is enough
+                return newItems;
             });
         }
     };
@@ -561,8 +555,6 @@ function KanbanBoard() {
             try {
                 // items are already updated in state, so we construct the payload from the final items list
 
-
-
                 // Payload construction
                 const payload = [];
 
@@ -572,8 +564,13 @@ function KanbanBoard() {
                     payload.push({ id: item.id, column: targetColumn, orderIndex: idx });
                 });
 
-                // If we prefer to send everything to be safe:
-                // payload.push(...sourceColItems...)
+                // Check for completion restore metadata
+                // We access the INITIAL item state from `active.data.current`
+                const initialItem = active.data?.current?.item;
+                if (initialItem && targetColumn === 'Completed' && initialItem.column !== 'Completed') {
+                    // We need to persist the original column
+                    await handleUpdateItem(activeId, { original_column: initialItem.column });
+                }
 
                 await axios.post(`/api/projects/${projectId}/kanban/reorder`, { items: payload });
 

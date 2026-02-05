@@ -17,7 +17,7 @@ app.use(express.json());
 // Routes
 app.use('/api/projects', projectsRouter);
 app.use('/api/projects', pagesRouter);
-app.use('/api', cellsRouter);
+app.use('/api/projects', cellsRouter);
 app.use('/api/projects', searchRouter);
 app.use('/api/projects', kanbanRouter);
 

@@ -64,7 +64,7 @@ function TaskCreateModal({ column, onConfirm, onCancel, onContextMenu }) {
 
     return (
         <div className="modal-overlay" onClick={onCancel}>
-            <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal kanban-modal" onClick={e => e.stopPropagation()}>
                 <h3>New Task in {column}</h3>
                 <form onSubmit={handleSubmit} className="task-create-form">
                     <div className="form-group">
@@ -73,7 +73,6 @@ function TaskCreateModal({ column, onConfirm, onCancel, onContextMenu }) {
                             type="text"
                             value={title}
                             onChange={e => setTitle(e.target.value)}
-                            // Standard context menu handler will be passed via onContextMenu
                             onContextMenu={e => {
                                 onContextMenu(e, setTitle, setDescription, 'title');
                             }}
@@ -87,7 +86,7 @@ function TaskCreateModal({ column, onConfirm, onCancel, onContextMenu }) {
                             value={description}
                             onChange={e => setDescription(e.target.value)}
                             placeholder="Details (supports [[Wiki Links]])..."
-                            rows={4}
+                            rows={6}
                             onContextMenu={e => {
                                 onContextMenu(e, setTitle, setDescription, 'description');
                             }}
@@ -103,8 +102,88 @@ function TaskCreateModal({ column, onConfirm, onCancel, onContextMenu }) {
     );
 }
 
+// --- Edit Modal Component ---
+function TaskEditModal({ item, onSave, onCancel, onContextMenu }) {
+    const [editValues, setEditValues] = useState({
+        title: item.title || '',
+        description: item.description || '',
+        tag_color: item.tag_color || null
+    });
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!editValues.title.trim()) return;
+        onSave(editValues);
+    };
+
+    const openLinkMenu = (e, field) => {
+        const selection = window.getSelection();
+        const text = selection.toString();
+        if (text && text.trim()) {
+            onContextMenu(e, field, (linkText) => {
+                setEditValues(prev => ({
+                    ...prev,
+                    [field]: (prev[field] || '').replace(text, linkText)
+                }));
+            });
+        }
+    };
+
+    return (
+        <div className="modal-overlay" onClick={onCancel}>
+            <div className="modal kanban-modal" onClick={e => e.stopPropagation()}>
+                <h3>Edit Task</h3>
+                <form onSubmit={handleSubmit} className="task-edit-form">
+                    <div className="form-group">
+                        <label>Title</label>
+                        <input
+                            type="text"
+                            value={editValues.title}
+                            onChange={e => setEditValues(prev => ({ ...prev, title: e.target.value }))}
+                            onContextMenu={e => openLinkMenu(e, 'title')}
+                            autoFocus
+                            placeholder="Task title..."
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Description</label>
+                        <textarea
+                            value={editValues.description}
+                            onChange={e => setEditValues(prev => ({ ...prev, description: e.target.value }))}
+                            placeholder="Details (supports [[Wiki Links]])..."
+                            rows={10}
+                            onContextMenu={e => openLinkMenu(e, 'description')}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Tags</label>
+                        <div className="item-tag-dots" style={{ marginTop: 4 }}>
+                            <button
+                                type="button"
+                                className={`tag-dot yellow ${editValues.tag_color === 'yellow' ? 'active' : ''}`}
+                                title="Importance"
+                                onClick={() => setEditValues(prev => ({ ...prev, tag_color: prev.tag_color === 'yellow' ? null : 'yellow' }))}
+                            />
+                            <button
+                                type="button"
+                                className={`tag-dot red ${editValues.tag_color === 'red' ? 'active' : ''}`}
+                                title="Error"
+                                onClick={() => setEditValues(prev => ({ ...prev, tag_color: prev.tag_color === 'red' ? null : 'red' }))}
+                            />
+                        </div>
+                    </div>
+                    <div className="modal-actions">
+                        <button type="button" className="btn-secondary" onClick={onCancel}>Cancel</button>
+                        <button type="submit" className="btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 // --- Sortable Item Component ---
-function SortableItem({ item, onUpdate, onDelete, onContextMenu, allPages, projectId }) {
+function SortableItem({ item, onUpdate, onDelete, onContextMenu, onOpenEditModal, allPages, projectId }) {
     const {
         attributes,
         listeners,
@@ -119,9 +198,6 @@ function SortableItem({ item, onUpdate, onDelete, onContextMenu, allPages, proje
         transition,
         opacity: isDragging ? 0.5 : 1,
     };
-
-    const [isEditing, setIsEditing] = useState(false);
-    const [editValues, setEditValues] = useState({ title: item.title, description: item.description });
 
     // Handle Wiki Links and Auto-Link ALL CAPS
     const renderDescription = (text) => {
@@ -194,11 +270,6 @@ function SortableItem({ item, onUpdate, onDelete, onContextMenu, allPages, proje
     // WRONG: We can't update item.id with contextMenu object in local state cleanly if we use onUpdate which calls API.
     // We need a separate prop `onConnectMenu(event, item, field, text)`
 
-    const handleSave = () => {
-        onUpdate(item.id, editValues);
-        setIsEditing(false);
-    };
-
     const formatDate = (dateString, label) => {
         if (!dateString) return null;
         return <div className="item-date" title={label}> <Calendar size={10} style={{ display: 'inline', marginRight: 2 }} /> {new Date(dateString).toLocaleDateString()}</div>;
@@ -208,45 +279,7 @@ function SortableItem({ item, onUpdate, onDelete, onContextMenu, allPages, proje
 
     return (
         <div ref={setNodeRef} style={style} className={`kanban-item ${isCompleted ? 'completed' : ''} ${item.tag_color === 'yellow' ? 'tag-yellow' : ''} ${item.tag_color === 'red' ? 'tag-red' : ''}`}>
-            {isEditing ? (
-                <div className="item-edit-form">
-                    <input
-                        type="text"
-                        value={editValues.title}
-                        onChange={e => setEditValues({ ...editValues, title: e.target.value })}
-                        className="item-input title"
-                        onContextMenu={(e) => {
-                            const selection = window.getSelection();
-                            const text = selection.toString();
-                            if (text && text.trim()) {
-                                onContextMenu(item, 'context-menu', e, text, 'title', (linkText) => {
-                                    setEditValues(prev => ({ ...prev, title: prev.title.replace(text, linkText) }));
-                                });
-                            }
-                        }}
-                    />
-                    <textarea
-                        value={editValues.description}
-                        onChange={e => setEditValues({ ...editValues, description: e.target.value })}
-                        placeholder="Description (use [[Link]] for pages)"
-                        className="item-input desc"
-                        onContextMenu={(e) => {
-                            const selection = window.getSelection();
-                            const text = selection.toString();
-                            if (text && text.trim()) {
-                                onContextMenu(item, 'context-menu', e, text, 'description', (linkText) => {
-                                    setEditValues(prev => ({ ...prev, description: prev.description.replace(text, linkText) }));
-                                });
-                            }
-                        }}
-                    />
-                    <div className="item-actions">
-                        <button className="btn-primary btn-xs" onClick={handleSave}>Save</button>
-                        <button className="btn-secondary btn-xs" onClick={() => setIsEditing(false)}>Cancel</button>
-                    </div>
-                </div>
-            ) : (
-                <div
+            <div
                     className="item-content"
                     onContextMenu={(e) => {
                         const selection = window.getSelection();
@@ -319,12 +352,11 @@ function SortableItem({ item, onUpdate, onDelete, onContextMenu, allPages, proje
                             </div>
                         </div>
                         <div className="item-controls-hover">
-                            <button className="btn-icon-sm" onClick={() => setIsEditing(true)}>✎</button>
+                            <button className="btn-icon-sm" onClick={() => onOpenEditModal(item)}>✎</button>
                             <button className="btn-icon-sm delete" onClick={() => onDelete(item, 'delete')}>×</button>
                         </div>
                     </div>
                 </div>
-            )}
         </div>
     );
 }
@@ -338,6 +370,7 @@ function KanbanBoard() {
     const [loading, setLoading] = useState(true);
     const [activeDragItem, setActiveDragItem] = useState(null);
     const [createModalState, setCreateModalState] = useState(null); // { column: string }
+    const [editingItem, setEditingItem] = useState(null); // item being edited in modal
     const [deleteItem, setDeleteItem] = useState(null); // { id, title }
     const [contextMenuState, setContextMenuState] = useState(null); // { x, y, text, item, field, updateCallback } 
 
@@ -449,31 +482,37 @@ function KanbanBoard() {
     };
 
     const handleCreationContextMenu = (event, eventSetTitle, eventSetDescription, field) => {
-        // This handler helps the Create Modal use the shared LinkContextMenu
         event.preventDefault();
         const selection = window.getSelection();
         const text = selection.toString();
-
         if (!text) return;
-
         setContextMenuState({
             x: event.clientX,
             y: event.clientY,
             text: text,
-            item: null, // No item ID yet
+            item: null,
             field: field,
             updateCallback: (linkText) => {
-                // Determine which setter to use and how to replace text
-                // Since we don't have easy access to the CURRENT value of the state here (closure stale?), 
-                // we rely on the specific setters passed from the modal.
-                // BUT, standard React setters `setTitle(prev => ...)` work!
-
                 if (field === 'title') {
                     eventSetTitle(prev => prev.replace(text, linkText));
                 } else {
                     eventSetDescription(prev => prev.replace(text, linkText));
                 }
             }
+        });
+    };
+
+    const handleEditModalContextMenu = (event, field, updateCallback) => {
+        event.preventDefault();
+        const text = window.getSelection().toString();
+        if (!text) return;
+        setContextMenuState({
+            x: event.clientX,
+            y: event.clientY,
+            text,
+            item: editingItem,
+            field,
+            updateCallback
         });
     };
 
@@ -700,6 +739,7 @@ function KanbanBoard() {
                                                             onUpdate={handleUpdateItem}
                                                             onDelete={handleContextAction}
                                                             onContextMenu={handleContextAction}
+                                                            onOpenEditModal={setEditingItem}
                                                             allPages={allPages}
                                                             projectId={projectId}
                                                         />
@@ -729,9 +769,19 @@ function KanbanBoard() {
                 <TaskCreateModal
                     column={createModalState.column}
                     onConfirm={handleCreateItem}
-                    // Handle context menu in title field
                     onContextMenu={handleCreationContextMenu}
                     onCancel={() => setCreateModalState(null)}
+                />
+            )}
+            {editingItem && (
+                <TaskEditModal
+                    item={editingItem}
+                    onSave={(updates) => {
+                        handleUpdateItem(editingItem.id, updates);
+                        setEditingItem(null);
+                    }}
+                    onCancel={() => setEditingItem(null)}
+                    onContextMenu={handleEditModalContextMenu}
                 />
             )}
             {deleteItem && (

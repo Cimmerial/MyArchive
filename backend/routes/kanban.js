@@ -77,7 +77,7 @@ router.post('/:projectId/kanban', validateProject, (req, res) => {
 router.put('/:projectId/kanban/:itemId', validateProject, (req, res) => {
     try {
         const { itemId } = req.params;
-        const { column, title, description, orderIndex, isCompleted } = req.body;
+        const { column, title, description, orderIndex, isCompleted, tag_color } = req.body;
 
         const item = req.projectDb.prepare('SELECT * FROM kanban_items WHERE id = ?').get(itemId);
         if (!item) return res.status(404).json({ error: 'Item not found' });
@@ -100,6 +100,10 @@ router.put('/:projectId/kanban/:itemId', validateProject, (req, res) => {
         if (orderIndex !== undefined) {
             updates.push('order_index = ?');
             values.push(orderIndex);
+        }
+        if (tag_color !== undefined) {
+            updates.push('tag_color = ?');
+            values.push(tag_color);
         }
 
         // Handle completion date logic automatically based on column or explicit flag

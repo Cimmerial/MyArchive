@@ -221,4 +221,25 @@
 .sidebar-resizer:hover,
 .sidebar-resizer:active {
     background-color: var(--color-accent);
-}.sidebar-buttons-row > button { min-width: 0; aspect-ratio: 1; text-overflow: ellipsis; overflow: hidden; }
+}
+
+.sidebar-buttons-row > button {
+    min-width: 0;
+    aspect-ratio: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* Home/Todo icons: 45% of button size (50% larger than 30%) so symbols stay visible */
+.sidebar-buttons-row .sidebar-nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-buttons-row .sidebar-nav-icon svg {
+    width: 45%;
+    height: 45%;
+    min-width: 12px;
+    min-height: 12px;
+}

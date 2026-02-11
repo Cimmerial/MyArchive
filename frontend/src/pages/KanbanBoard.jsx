@@ -26,6 +26,30 @@ import LinkContextMenu from '../components/LinkContextMenu';
 import './KanbanBoard.css';
 
 const COLUMNS = ['Priority Todos', 'Other Todos', 'Icebox', 'Completed'];
+const ACTIVE_COLUMNS = COLUMNS.slice(0, 3); // Priority, Other, Icebox (exclude Completed)
+
+/** Fuzzy search: exact substring = 0, fuzzy subsequence = 1, no match = 2. Lower is better. */
+function searchRank(item, query) {
+    const q = query.trim().toLowerCase();
+    if (!q) return { match: true, rank: 0 };
+    const title = (item.title || '').toLowerCase();
+    const desc = (item.description || '').toLowerCase();
+    const exactTitle = title.includes(q);
+    const exactDesc = desc.includes(q);
+    if (exactTitle) return { match: true, rank: 0 };
+    if (exactDesc) return { match: true, rank: 1 };
+    // Fuzzy: query chars appear in order
+    const fuzzy = (text) => {
+        let j = 0;
+        for (let i = 0; i < text.length && j < q.length; i++) {
+            if (text[i] === q[j]) j++;
+        }
+        return j === q.length;
+    };
+    if (fuzzy(title)) return { match: true, rank: 2 };
+    if (fuzzy(desc)) return { match: true, rank: 3 };
+    return { match: false, rank: 99 };
+}
 
 // --- Create Modal Component ---
 function TaskCreateModal({ column, onConfirm, onCancel, onContextMenu }) {
@@ -183,7 +207,7 @@ function SortableItem({ item, onUpdate, onDelete, onContextMenu, allPages, proje
     const isCompleted = item.column === 'Completed';
 
     return (
-        <div ref={setNodeRef} style={style} className={`kanban-item ${isCompleted ? 'completed' : ''}`}>
+        <div ref={setNodeRef} style={style} className={`kanban-item ${isCompleted ? 'completed' : ''} ${item.tag_color === 'yellow' ? 'tag-yellow' : ''} ${item.tag_color === 'red' ? 'tag-red' : ''}`}>
             {isEditing ? (
                 <div className="item-edit-form">
                     <input
@@ -279,7 +303,20 @@ function SortableItem({ item, onUpdate, onDelete, onContextMenu, allPages, proje
                     <div className="item-footer">
                         <div className="item-dates">
                             {formatDate(item.created_at, "Created")}
-                            {/* {item.completed_at && formatDate(item.completed_at, "Completed")} */}
+                            <div className="item-tag-dots" onClick={e => e.stopPropagation()}>
+                                <button
+                                    type="button"
+                                    className={`tag-dot yellow ${item.tag_color === 'yellow' ? 'active' : ''}`}
+                                    title="Importance"
+                                    onClick={() => onUpdate(item.id, { tag_color: item.tag_color === 'yellow' ? null : 'yellow' })}
+                                />
+                                <button
+                                    type="button"
+                                    className={`tag-dot red ${item.tag_color === 'red' ? 'active' : ''}`}
+                                    title="Error"
+                                    onClick={() => onUpdate(item.id, { tag_color: item.tag_color === 'red' ? null : 'red' })}
+                                />
+                            </div>
                         </div>
                         <div className="item-controls-hover">
                             <button className="btn-icon-sm" onClick={() => setIsEditing(true)}>✎</button>
@@ -308,12 +345,20 @@ function KanbanBoard() {
     const [searchQueries, setSearchQueries] = useState(
         COLUMNS.reduce((acc, col) => ({ ...acc, [col]: '' }), {})
     );
+    const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+    const [todoBoardFontSize, setTodoBoardFontSize] = useState(() => localStorage.getItem('todo-board-font-size') || 'medium');
 
     // Initial Load
     useEffect(() => {
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [projectId]);
+
+    useEffect(() => {
+        const handler = () => setTodoBoardFontSize(localStorage.getItem('todo-board-font-size') || 'medium');
+        window.addEventListener('todo-board-font-size-changed', handler);
+        return () => window.removeEventListener('todo-board-font-size-changed', handler);
+    }, []);
 
     const loadData = async () => {
         try {
@@ -493,21 +538,15 @@ function KanbanBoard() {
                 const activeIndex = prev.findIndex(i => i.id === activeId);
                 const overIndex = prev.findIndex(i => i.id === overId);
 
-                // Clone items
                 const newItems = [...prev];
 
-                // Update column first - this is CRITICAL for the item to be "in" the new column
                 if (activeIndex !== -1) {
                     newItems[activeIndex] = { ...newItems[activeIndex], column: overColumn };
                 }
 
-                // If dropped on a specific item, move to that position (visual reorder)
-                if (activeIndex !== -1 && overIndex !== -1) {
-                    return arrayMove(newItems, activeIndex, overIndex);
-                }
-
-                // If dropped on a container (empty or end), just column update is enough
-                return newItems;
+                return (activeIndex !== -1 && overIndex !== -1)
+                    ? arrayMove(newItems, activeIndex, overIndex)
+                    : newItems;
             });
         }
     };
@@ -535,10 +574,7 @@ function KanbanBoard() {
 
         if (activeId !== overId || activeItem.column !== targetColumn) {
 
-            // Final state calculation and persistence
-            // Since handleDragOver now updates the order even for cross-column moves, 
-            // `items` should be close to visual state. We verify distinct indices just in case.
-
+            // Final state: reorder and set moved item's column (state may be stale so we fix it here)
             const activeIndex = items.findIndex(i => i.id === activeId);
             const overIndex = items.findIndex(i => i.id === overId);
 
@@ -548,32 +584,27 @@ function KanbanBoard() {
                 finalItems = arrayMove(finalItems, activeIndex, overIndex);
             }
 
-            // Update state to match final position
+            // Ensure the moved item has the target column (critical for persistence)
+            const moved = finalItems.find(i => i.id === activeId);
+            if (moved) moved.column = targetColumn;
+
             setItems(finalItems);
 
-            // PERSISTENCE
+            // Persist immediately
             try {
-                // items are already updated in state, so we construct the payload from the final items list
-
-                // Payload construction
-                const payload = [];
-
-                // For the target column, explicit update
                 const targetColItems = finalItems.filter(i => i.column === targetColumn);
-                targetColItems.forEach((item, idx) => {
-                    payload.push({ id: item.id, column: targetColumn, orderIndex: idx });
-                });
+                const payload = targetColItems.map((item, idx) => ({
+                    id: item.id,
+                    column: targetColumn,
+                    orderIndex: idx
+                }));
 
-                // Check for completion restore metadata
-                // We access the INITIAL item state from `active.data.current`
                 const initialItem = active.data?.current?.item;
                 if (initialItem && targetColumn === 'Completed' && initialItem.column !== 'Completed') {
-                    // We need to persist the original column
                     await handleUpdateItem(activeId, { original_column: initialItem.column });
                 }
 
                 await axios.post(`/api/projects/${projectId}/kanban/reorder`, { items: payload });
-
             } catch (err) {
                 console.error("Failed to reorder", err);
             }
@@ -588,7 +619,7 @@ function KanbanBoard() {
     if (loading) return <div className="kanban-page loading">Loading...</div>;
 
     return (
-        <div className="kanban-page">
+        <div className={`kanban-page font-size-${todoBoardFontSize}`}>
             <Header project={project} currentPage={{ id: 'kanban-board', title: 'Todo Board' }} allPages={allPages} />
             <div className="wiki-content">
                 <Sidebar
@@ -604,6 +635,13 @@ function KanbanBoard() {
                 <div className="kanban-board-container">
                     <div className="kanban-header">
                         <h1>{project ? project.display_name : 'Project'} TODOs</h1>
+                        <input
+                            type="text"
+                            className="kanban-global-search"
+                            placeholder="Search all active todos (fuzzy)..."
+                            value={globalSearchQuery}
+                            onChange={e => setGlobalSearchQuery(e.target.value)}
+                        />
                     </div>
 
                     <DndContext
@@ -615,13 +653,21 @@ function KanbanBoard() {
                     >
                         <div className="kanban-columns">
                             {COLUMNS.map(column => {
-                                const columnItems = items
-                                    .filter(i => i.column === column)
-                                    .filter(i => {
+                                const isActiveColumn = ACTIVE_COLUMNS.includes(column);
+                                let columnItems = items.filter(i => i.column === column);
+
+                                if (isActiveColumn && globalSearchQuery.trim()) {
+                                    const withRank = columnItems.map(i => ({ item: i, ...searchRank(i, globalSearchQuery) }));
+                                    columnItems = withRank
+                                        .filter(w => w.match)
+                                        .sort((a, b) => a.rank - b.rank || (a.item.order_index - b.item.order_index))
+                                        .map(w => w.item);
+                                } else {
+                                    columnItems = columnItems.filter(i => {
                                         const q = searchQueries[column].toLowerCase();
-                                        return !q || i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q);
+                                        return !q || (i.title || '').toLowerCase().includes(q) || (i.description || '').toLowerCase().includes(q);
                                     });
-                                // .sort((a,b) => a.order_index - b.order_index); // Handled by SortableContext usually
+                                }
 
                                 return (
                                     <div key={column} className="kanban-column">

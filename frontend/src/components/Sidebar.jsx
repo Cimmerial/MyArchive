@@ -209,18 +209,18 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
                     {project && (
                         <>
                             <button
-                                className={`btn-secondary btn-icon ${currentPage?.id === 'main' ? 'active' : ''}`}
+                                className={`btn-secondary btn-icon sidebar-nav-icon ${currentPage?.id === 'main' ? 'active' : ''}`}
                                 onClick={() => navigate(`/project/${projectId}`)}
                                 title={`${project.display_name} Main Page`}
                             >
-                                <House size={18} />
+                                <House />
                             </button>
                             <button
-                                className="btn-secondary btn-icon"
+                                className="btn-secondary btn-icon sidebar-nav-icon"
                                 onClick={() => navigate(`/project/${projectId}/todo`)}
                                 title="Kanban Board"
                             >
-                                <CheckSquare size={18} />
+                                <CheckSquare />
                             </button>
                         </>
                     )}

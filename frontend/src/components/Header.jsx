@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Header.css';
 
+const TODO_BOARD_FONT_KEY = 'todo-board-font-size';
+
 function Header({ project, currentPage, allPages }) {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [currentFont, setCurrentFont] = useState(localStorage.getItem('app-font') || 'Inter');
+    const [todoBoardFontSize, setTodoBoardFontSize] = useState(localStorage.getItem(TODO_BOARD_FONT_KEY) || 'medium');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -19,6 +22,12 @@ function Header({ project, currentPage, allPages }) {
         }
         return () => document.removeEventListener('click', handleClickOutside);
     }, [currentFont, isSettingsOpen]);
+
+    const handleTodoBoardFontSize = (size) => {
+        setTodoBoardFontSize(size);
+        localStorage.setItem(TODO_BOARD_FONT_KEY, size);
+        window.dispatchEvent(new CustomEvent('todo-board-font-size-changed', { detail: size }));
+    };
 
     const getFontFamily = (fontName) => {
         switch (fontName) {
@@ -119,6 +128,22 @@ function Header({ project, currentPage, allPages }) {
                                     ))}
                                 </div>
                             </div>
+                            {currentPage?.id === 'kanban-board' && (
+                                <div className="settings-section">
+                                    <h4>Todo board font size</h4>
+                                    <div className="font-options">
+                                        {['small', 'medium', 'large'].map(size => (
+                                            <div
+                                                key={size}
+                                                className={`font-option ${todoBoardFontSize === size ? 'active' : ''}`}
+                                                onClick={() => handleTodoBoardFontSize(size)}
+                                            >
+                                                {size.charAt(0).toUpperCase() + size.slice(1)}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -179,12 +179,19 @@ function initializeSchema(db) {
       is_archived BOOLEAN DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      completed_at DATETIME
+      completed_at DATETIME,
+      tag_color TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_kanban_column ON kanban_items(column);
     CREATE INDEX IF NOT EXISTS idx_kanban_archived ON kanban_items(is_archived);
   `);
+
+  // Migration: add tag_color to existing kanban_items tables
+  const kanbanCols = db.prepare("PRAGMA table_info(kanban_items)").all();
+  if (kanbanCols.some((c) => c.name === 'tag_color') === false) {
+    db.exec('ALTER TABLE kanban_items ADD COLUMN tag_color TEXT');
+  }
 }
 
 /**

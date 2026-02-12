@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar';
 import DeleteConfirmModal from './DeleteConfirmModal';
-import { House, CheckSquare } from 'lucide-react';
+import { House, CheckSquare, ScrollText } from 'lucide-react';
 import './Sidebar.css';
 
 function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDeletePage, onUpdatePage }) {
@@ -216,11 +216,18 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
                                 <House />
                             </button>
                             <button
-                                className="btn-secondary btn-icon sidebar-nav-icon"
+                                className={`btn-secondary btn-icon sidebar-nav-icon ${currentPage?.id === 'todo' ? 'active' : ''}`}
                                 onClick={() => navigate(`/project/${projectId}/todo`)}
                                 title="Kanban Board"
                             >
                                 <CheckSquare />
+                            </button>
+                            <button
+                                className={`btn-secondary btn-icon sidebar-nav-icon ${currentPage?.id === 'devlog' ? 'active' : ''}`}
+                                onClick={() => navigate(`/project/${projectId}/devlog`)}
+                                title="Developer Log"
+                            >
+                                <ScrollText />
                             </button>
                         </>
                     )}

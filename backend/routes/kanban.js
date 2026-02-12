@@ -4,6 +4,25 @@ import { getProjectDb, getMetaDb } from '../db.js';
 const router = express.Router();
 
 /**
+ * Helper to log activity
+ */
+function logActivity(db, entityType, entityId, action, details) {
+    try {
+        // Use local time YYYY-MM-DD
+        const today = new Date().toLocaleDateString('en-CA');
+        db.prepare(
+            'INSERT INTO activity_log (entity_type, entity_id, action, details, day_date) VALUES (?, ?, ?, ?, ?)'
+        ).run(entityType, entityId, action, JSON.stringify(details), today);
+
+        // Ensure day exists in devlog_days
+        db.prepare('INSERT OR IGNORE INTO devlog_days (date) VALUES (?)').run(today);
+    } catch (e) {
+        console.error('Failed to log activity:', e);
+    }
+}
+
+
+/**
  * Middleware to validate project exists
  */
 function validateProject(req, res, next) {
@@ -63,6 +82,9 @@ router.post('/:projectId/kanban', validateProject, (req, res) => {
         `).run(column, title, description || '', finalOrderIndex);
 
         const newItem = req.projectDb.prepare('SELECT * FROM kanban_items WHERE id = ?').get(result.lastInsertRowid);
+
+        logActivity(req.projectDb, 'todo', newItem.id, 'created', { title, column });
+
         res.status(201).json(newItem);
     } catch (error) {
         console.error('Error creating kanban item:', error);
@@ -125,6 +147,17 @@ router.put('/:projectId/kanban/:itemId', validateProject, (req, res) => {
             `UPDATE kanban_items SET ${updates.join(', ')} WHERE id = ?`
         ).run(...values);
 
+        if (column === 'Completed' && item.column !== 'Completed') {
+            logActivity(req.projectDb, 'todo', itemId, 'completed', { title: item.title });
+        } else if (title && title !== item.title) {
+            logActivity(req.projectDb, 'todo', itemId, 'updated', { title: title, oldTitle: item.title });
+        } else {
+            // For drag and drop reordering we might spam logs, so let's only log if column changes or meaningful update
+            if (column && column !== item.column) {
+                logActivity(req.projectDb, 'todo', itemId, 'moved', { title: item.title, from: item.column, to: column });
+            }
+        }
+
         const updatedItem = req.projectDb.prepare('SELECT * FROM kanban_items WHERE id = ?').get(itemId);
         res.json(updatedItem);
     } catch (error) {
@@ -140,7 +173,13 @@ router.put('/:projectId/kanban/:itemId', validateProject, (req, res) => {
 router.delete('/:projectId/kanban/:itemId', validateProject, (req, res) => {
     try {
         const { itemId } = req.params;
+        const item = req.projectDb.prepare('SELECT title FROM kanban_items WHERE id = ?').get(itemId);
         req.projectDb.prepare('DELETE FROM kanban_items WHERE id = ?').run(itemId);
+
+        if (item) {
+            logActivity(req.projectDb, 'todo', itemId, 'deleted', { title: item.title });
+        }
+
         res.status(204).send();
     } catch (error) {
         console.error('Error deleting kanban item:', error);

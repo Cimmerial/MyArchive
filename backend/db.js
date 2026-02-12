@@ -185,6 +185,41 @@ function initializeSchema(db) {
 
     CREATE INDEX IF NOT EXISTS idx_kanban_column ON kanban_items(column);
     CREATE INDEX IF NOT EXISTS idx_kanban_archived ON kanban_items(is_archived);
+
+    -- Devlog Tables
+    CREATE TABLE IF NOT EXISTS devlog_days (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT UNIQUE NOT NULL, -- YYYY-MM-DD
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS devlog_cells (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      day_id INTEGER NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('header', 'subheader', 'text', 'table')),
+      content TEXT NOT NULL DEFAULT '',
+      order_index INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (day_id) REFERENCES devlog_days(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_devlog_days_date ON devlog_days(date);
+    CREATE INDEX IF NOT EXISTS idx_devlog_cells_day ON devlog_cells(day_id);
+    CREATE INDEX IF NOT EXISTS idx_devlog_cells_order ON devlog_cells(day_id, order_index);
+
+    -- Activity Log for automation
+    CREATE TABLE IF NOT EXISTS activity_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_type TEXT NOT NULL, -- 'page', 'todo'
+      entity_id INTEGER NOT NULL,
+      action TEXT NOT NULL, -- 'created', 'updated', 'completed', 'deleted'
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      details TEXT, -- JSON or text summary
+      day_date TEXT -- Denormalized YYYY-MM-DD for easier querying
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_activity_date ON activity_log(day_date);
   `);
 
   // Migration: add tag_color to existing kanban_items tables

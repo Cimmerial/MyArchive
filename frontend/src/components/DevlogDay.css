@@ -1,0 +1,66 @@
+.devlog-day {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.devlog-date-header {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+    position: sticky;
+    top: 0;
+    background: var(--color-bg-primary);
+    z-index: 10;
+    padding: 1rem 0;
+}
+
+.activity-summary {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--color-bg-secondary);
+    border-radius: 8px;
+}
+
+.activity-section {
+    flex: 1;
+}
+
+.activity-section h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-item {
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.activity-action {
+    color: var(--color-accent);
+    margin-right: 0.5rem;
+    font-weight: 600;
+}
+
+.add-cell-buttons {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.add-cell-buttons:hover {
+    opacity: 1;
+}

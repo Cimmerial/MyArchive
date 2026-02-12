@@ -8,6 +8,24 @@ function escapeRegExp(string) {
 }
 
 /**
+ * Helper to log activity
+ */
+function logActivity(db, entityType, entityId, action, details) {
+    try {
+        // Use local time YYYY-MM-DD
+        const today = new Date().toLocaleDateString('en-CA');
+        db.prepare(
+            'INSERT INTO activity_log (entity_type, entity_id, action, details, day_date) VALUES (?, ?, ?, ?, ?)'
+        ).run(entityType, entityId, action, JSON.stringify(details), today);
+
+        // Ensure day exists in devlog_days
+        db.prepare('INSERT OR IGNORE INTO devlog_days (date) VALUES (?)').run(today);
+    } catch (e) {
+        console.error('Failed to log activity:', e);
+    }
+}
+
+/**
  * Middleware to validate project exists
  */
 function validateProject(req, res, next) {
@@ -168,6 +186,8 @@ router.post('/:projectId/pages', validateProject, (req, res) => {
             'SELECT * FROM cells WHERE page_id = ? ORDER BY order_index'
         ).all(pageId);
 
+        logActivity(req.projectDb, 'page', pageId, 'created', { title });
+
         res.status(201).json({ ...page, cells });
     } catch (error) {
         console.error('Error creating page:', error);
@@ -237,6 +257,13 @@ router.put('/:projectId/pages/:pageId', validateProject, (req, res) => {
 
         const updatedPage = req.projectDb.prepare('SELECT * FROM pages WHERE id = ?').get(pageId);
 
+        if (newTitle !== page.title) {
+            logActivity(req.projectDb, 'page', pageId, 'renamed', { oldTitle: page.title, newTitle });
+        } else {
+            // Generic update
+            logActivity(req.projectDb, 'page', pageId, 'updated', { title: newTitle });
+        }
+
         res.json(updatedPage);
     } catch (error) {
         console.error('Error updating page:', error);
@@ -297,6 +324,8 @@ router.delete('/:projectId/pages/:pageId', validateProject, (req, res) => {
         };
 
         deletePageAndChildren(pageId);
+
+        logActivity(req.projectDb, 'page', pageId, 'deleted', { title: page ? page.title : 'Unknown' });
 
         res.status(204).send();
     } catch (error) {

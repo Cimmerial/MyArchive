@@ -12,11 +12,12 @@
 }
 
 .sidebar-header {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
+    /* Reduced padding */
     border-bottom: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
 }
 
 .page-tree {
@@ -187,19 +188,24 @@
 
 .sidebar-buttons-row {
     display: flex;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
+    /* Smaller gap */
 }
 
 .sidebar-buttons-row>button {
-    flex: 1;
+    flex: 0 0 32px;
+    /* Don't grow, fixed small size */
+    height: 32px;
+    width: 32px;
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
+    border-radius: 6px;
 }
 
 .sidebar-main-page-btn {
-    padding: var(--spacing-xs);
-    font-weight: 600;
+    /* Overrides for specific button if needed */
 }
 
 .sidebar-main-page-btn.active {
@@ -223,23 +229,15 @@
     background-color: var(--color-accent);
 }
 
-.sidebar-buttons-row > button {
-    min-width: 0;
-    aspect-ratio: 1;
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-
-/* Home/Todo icons: 45% of button size (50% larger than 30%) so symbols stay visible */
 .sidebar-buttons-row .sidebar-nav-icon {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
+/* Make icons large inside small buttons */
 .sidebar-buttons-row .sidebar-nav-icon svg {
-    width: 45%;
-    height: 45%;
-    min-width: 12px;
-    min-height: 12px;
+    width: 20px;
+    height: 20px;
+    stroke-width: 2px;
 }

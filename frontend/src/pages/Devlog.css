@@ -1,0 +1,45 @@
+.devlog-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: var(--color-bg-primary);
+}
+
+.devlog-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem 4rem;
+    /* More padding like other pages */
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.devlog-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 1rem;
+    color: var(--color-text-highlight);
+}
+
+.devlog-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 2rem;
+    color: var(--color-text-muted);
+}
+
+.end-of-log {
+    text-align: center;
+    padding: 2rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+    border-top: 1px solid var(--color-border);
+}

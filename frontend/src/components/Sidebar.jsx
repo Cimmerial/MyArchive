@@ -26,7 +26,7 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
     useEffect(() => {
         const handleMouseMove = (e) => {
             if (!isResizing) return;
-            const newWidth = Math.max(200, Math.min(600, e.clientX));
+            const newWidth = Math.max(100, Math.min(600, e.clientX));
             setSidebarWidth(newWidth);
         };
 

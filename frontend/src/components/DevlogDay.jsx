@@ -19,6 +19,8 @@ import './DevlogDay.css';
 
 function DevlogDay({ day, projectId, allPages, onDayUpdate }) {
     const [cells, setCells] = useState(day.cells || []);
+    const [showAllPages, setShowAllPages] = useState(false);
+    const [showAllTodos, setShowAllTodos] = useState(false);
 
     // Sort logic for activity
     const pageActivity = day.activity?.filter(a => a.entity_type === 'page') || [];
@@ -190,23 +192,59 @@ function DevlogDay({ day, projectId, allPages, onDayUpdate }) {
 
             <div className="activity-summary">
                 <div className="activity-section">
-                    <h4>Pages Created/Updated</h4>
+                    <h4 onClick={() => setShowAllPages(!showAllPages)}>Pages Created/Updated</h4>
                     <ul className="activity-list">
-                        {pageActivity.length > 0 ? pageActivity.map(act => (
-                            <li key={act.id} className="activity-item">
-                                {formatActivity(act)}
-                            </li>
-                        )) : <li className="text-muted">No page activity</li>}
+                        {pageActivity.length > 0 ? (
+                            <>
+                                {pageActivity.slice(0, 3).map(act => (
+                                    <li key={act.id} className="activity-item">
+                                        {formatActivity(act)}
+                                    </li>
+                                ))}
+                                {pageActivity.length > 3 && (
+                                    <>
+                                        {showAllPages && pageActivity.slice(3).map(act => (
+                                            <li key={act.id} className="activity-item">
+                                                {formatActivity(act)}
+                                            </li>
+                                        ))}
+                                        <li className="activity-toggle">
+                                            <button onClick={() => setShowAllPages(!showAllPages)}>
+                                                {showAllPages ? '▲ Show less' : `▼ Show ${pageActivity.length - 3} more`}
+                                            </button>
+                                        </li>
+                                    </>
+                                )}
+                            </>
+                        ) : <li className="text-muted">No page activity</li>}
                     </ul>
                 </div>
                 <div className="activity-section">
-                    <h4>Todos Created/Completed</h4>
+                    <h4 onClick={() => setShowAllTodos(!showAllTodos)}>Todos Created/Completed</h4>
                     <ul className="activity-list">
-                        {todoActivity.length > 0 ? todoActivity.map(act => (
-                            <li key={act.id} className="activity-item">
-                                {formatActivity(act)}
-                            </li>
-                        )) : <li className="text-muted">No todo activity</li>}
+                        {todoActivity.length > 0 ? (
+                            <>
+                                {todoActivity.slice(0, 3).map(act => (
+                                    <li key={act.id} className="activity-item">
+                                        {formatActivity(act)}
+                                    </li>
+                                ))}
+                                {todoActivity.length > 3 && (
+                                    <>
+                                        {showAllTodos && todoActivity.slice(3).map(act => (
+                                            <li key={act.id} className="activity-item">
+                                                {formatActivity(act)}
+                                            </li>
+                                        ))}
+                                        <li className="activity-toggle">
+                                            <button onClick={() => setShowAllTodos(!showAllTodos)}>
+                                                {showAllTodos ? '▲ Show less' : `▼ Show ${todoActivity.length - 3} more`}
+                                            </button>
+                                        </li>
+                                    </>
+                                )}
+                            </>
+                        ) : <li className="text-muted">No todo activity</li>}
                     </ul>
                 </div>
             </div>

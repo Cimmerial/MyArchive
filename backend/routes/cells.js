@@ -4,6 +4,24 @@ import { getProjectDb, getMetaDb } from '../db.js';
 const router = express.Router();
 
 /**
+ * Helper to log activity
+ */
+function logActivity(db, entityType, entityId, action, details) {
+    try {
+        // Use local time YYYY-MM-DD
+        const today = new Date().toLocaleDateString('en-CA');
+        db.prepare(
+            'INSERT INTO activity_log (entity_type, entity_id, action, details, day_date) VALUES (?, ?, ?, ?, ?)'
+        ).run(entityType, entityId, action, JSON.stringify(details), today);
+
+        // Ensure day exists in devlog_days
+        db.prepare('INSERT OR IGNORE INTO devlog_days (date) VALUES (?)').run(today);
+    } catch (e) {
+        console.error('Failed to log activity:', e);
+    }
+}
+
+/**
  * Middleware to get project database from page ID
  */
 function getDbFromPage(req, res, next) {
@@ -132,6 +150,14 @@ router.put('/:projectId/cells/:cellId', getDbFromCell, (req, res) => {
         ).run(...values);
 
         const cell = req.projectDb.prepare('SELECT * FROM cells WHERE id = ?').get(cellId);
+
+        // Log activity for page update
+        if (cell.page_id !== null) {
+            const page = req.projectDb.prepare('SELECT id, title FROM pages WHERE id = ?').get(cell.page_id);
+            if (page) {
+                logActivity(req.projectDb, 'page', page.id, 'updated', { title: page.title });
+            }
+        }
 
         res.json(cell);
     } catch (error) {

@@ -1,6 +1,6 @@
 .sidebar {
     /* Width handled by inline style */
-    min-width: 200px;
+    min-width: 100px;
     max-width: 600px;
     background-color: var(--color-bg-secondary);
     border-right: 1px solid var(--color-border);
@@ -202,10 +202,6 @@
     justify-content: center;
     align-items: center;
     border-radius: 6px;
-}
-
-.sidebar-main-page-btn {
-    /* Overrides for specific button if needed */
 }
 
 .sidebar-main-page-btn.active {

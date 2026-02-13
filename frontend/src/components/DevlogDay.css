@@ -5,24 +5,34 @@
 }
 
 .devlog-date-header {
-    font-size: 1.8rem;
-    font-weight: 700;
+    font-size: 1.1rem;
+    font-weight: 600;
     margin-bottom: 1rem;
-    color: var(--color-text);
+    color: #fbbf24;
+    /* Yellow color */
     position: sticky;
     top: 0;
-    background: var(--color-bg-primary);
+    background: #000000;
+    /* Black background to fill gap */
     z-index: 10;
-    padding: 1rem 0;
+    padding: 0.75rem 2rem;
+    /* Increased horizontal padding */
+    margin-left: -4rem;
+    /* Extend to container edge */
+    margin-right: -4rem;
+    /* Extend to container edge */
+    border-bottom: 1px solid rgba(251, 191, 36, 0.2);
 }
 
 .activity-summary {
     display: flex;
     gap: 2rem;
     margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: var(--color-bg-secondary);
-    border-radius: 8px;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .activity-section {
@@ -30,10 +40,21 @@
 }
 
 .activity-section h4 {
-    margin: 0 0 0.5rem 0;
-    font-size: 0.9rem;
+    margin: 0 0 0.75rem 0;
+    font-size: 0.75rem;
+    /* Smaller size */
     text-transform: uppercase;
-    color: var(--color-text-muted);
+    letter-spacing: 0.5px;
+    color: rgba(139, 92, 246, 0.8);
+    font-weight: 700;
+    cursor: pointer;
+    /* Make it look clickable */
+    user-select: none;
+    transition: color 0.2s;
+}
+
+.activity-section h4:hover {
+    color: rgba(139, 92, 246, 1);
 }
 
 .activity-list {
@@ -43,8 +64,10 @@
 }
 
 .activity-item {
-    padding: 0.25rem 0;
-    font-size: 0.9rem;
+    padding: 0.35rem 0;
+    font-size: 0.875rem;
+    color: var(--color-text-primary);
+    line-height: 1.5;
 }
 
 .activity-action {
@@ -63,4 +86,31 @@
 
 .add-cell-buttons:hover {
     opacity: 1;
+}
+
+.activity-toggle {
+    margin-top: 0.5rem;
+    list-style: none;
+}
+
+.activity-toggle button {
+    background: none;
+    border: none;
+    color: var(--color-accent);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0.25rem 0;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.activity-toggle button:hover {
+    color: var(--color-text-highlight);
+    transform: translateX(2px);
+}
+
+.text-muted {
+    color: var(--color-text-muted);
+    font-style: italic;
+    font-size: 0.85rem;
 }

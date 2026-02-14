@@ -6,6 +6,7 @@ import axios from 'axios';
 import LinkContextMenu from './LinkContextMenu';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import TableEditor from './TableEditor';
+import RankingEditor from './RankingEditor';
 import './Cell.css';
 
 function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreatePage, autoFocus, onInsert }) {
@@ -74,7 +75,7 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
             return;
         }
 
-        if (type === 'table') {
+        if (type === 'table' || type === 'ranking') {
             if (content !== cell.content) {
                 onUpdate(cell.id, { content: content });
             }
@@ -118,7 +119,7 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
     };
 
     const handleInput = () => {
-        if (type === 'table') return;
+        if (type === 'table' || type === 'ranking') return;
 
         // Auto-link ALL CAPS words and phrases
         const html = contentRef.current.innerHTML;
@@ -423,6 +424,11 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                             onChange={(newContent) => setContent(newContent)}
                             readOnly={false}
                         />
+                    ) : type === 'ranking' ? (
+                        <RankingEditor
+                            content={content}
+                            onChange={(newContent) => setContent(newContent)}
+                        />
                     ) : (
                         <div
                             ref={contentRef}
@@ -447,7 +453,7 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                             onClick={() => setIsTypeMenuOpen(!isTypeMenuOpen)}
                             title="Change type"
                         >
-                            {type === 'header' ? 'H1' : type === 'subheader' ? 'H2' : type === 'table' ? 'TBL' : 'T'}
+                            {type === 'header' ? 'H1' : type === 'subheader' ? 'H2' : type === 'table' ? 'TBL' : type === 'ranking' ? 'RANK' : 'T'}
                         </div>
 
                         {isTypeMenuOpen && (
@@ -475,6 +481,12 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                                     onClick={() => { handleTypeChange('table'); setIsTypeMenuOpen(false); }}
                                 >
                                     Table
+                                </div>
+                                <div
+                                    className="cell-type-option"
+                                    onClick={() => { handleTypeChange('ranking'); setIsTypeMenuOpen(false); }}
+                                >
+                                    Ranking
                                 </div>
                             </div>
                         )}
@@ -519,6 +531,7 @@ function Cell({ cell, projectId, pageId, allPages, onUpdate, onDelete, onCreateP
                                 <div className="cell-type-option" onClick={() => { onInsert(cell.id, insertMenu.position, 'header'); setInsertMenu({ isOpen: false, position: null }); }}>Header</div>
                                 <div className="cell-type-option" onClick={() => { onInsert(cell.id, insertMenu.position, 'subheader'); setInsertMenu({ isOpen: false, position: null }); }}>Subheader</div>
                                 <div className="cell-type-option" onClick={() => { onInsert(cell.id, insertMenu.position, 'table'); setInsertMenu({ isOpen: false, position: null }); }}>Table</div>
+                                <div className="cell-type-option" onClick={() => { onInsert(cell.id, insertMenu.position, 'ranking'); setInsertMenu({ isOpen: false, position: null }); }}>Ranking</div>
                             </div>
                         )}
                     </div>

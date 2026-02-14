@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { FileText, CheckSquare } from 'lucide-react';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import './ProjectSelection.css';
 
@@ -95,8 +96,12 @@ function ProjectSelection() {
                                 <div className="project-card-content" onClick={() => navigate(`/project/${project.id}`)}>
                                     <h2>{project.display_name}</h2>
                                     <p className="text-muted">
-                                        Created {new Date(project.created_at).toLocaleDateString()}
+                                        Created {new Date(project.created_at).toLocaleDateString()} ({project.stats?.totalWordCount?.toLocaleString() || 0} words)
                                     </p>
+                                    <div className="project-stats">
+                                        <span><FileText size={14} /> {project.stats?.pageCount || 0} Pages</span>
+                                        <span><CheckSquare size={14} /> {project.stats?.completedTodos || 0}/{project.stats?.totalTodos || 0} Todos</span>
+                                    </div>
                                 </div>
                                 <button
                                     className="delete-btn"

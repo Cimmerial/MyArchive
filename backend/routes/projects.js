@@ -1,5 +1,5 @@
 import express from 'express';
-import { getMetaDb } from '../db.js';
+import { getMetaDb, getProjectDb } from '../db.js';
 
 const router = express.Router();
 
@@ -9,8 +9,71 @@ const router = express.Router();
 router.get('/', (req, res) => {
     try {
         const db = getMetaDb();
-        const projects = db.prepare('SELECT * FROM projects ORDER BY updated_at DESC').all();
-        res.json(projects);
+        const projects = db.prepare('SELECT * FROM projects').all();
+
+        const projectsWithStats = projects.map(project => {
+            try {
+                const projectDb = getProjectDb(project.name);
+
+                // Calculate page word counts
+                const pageStats = projectDb.prepare(`
+                    SELECT 
+                        COUNT(DISTINCT p.id) as page_count,
+                        SUM(LENGTH(c.content) - LENGTH(REPLACE(c.content, ' ', '')) + 1) as word_count
+                    FROM pages p
+                    LEFT JOIN cells c ON p.id = c.page_id
+                    WHERE p.id != 0
+                `).get();
+
+                // Calculate todo stats
+                const todoStats = projectDb.prepare(`
+                    SELECT 
+                        COUNT(*) as total_todos,
+                        SUM(CASE WHEN completed_at IS NOT NULL THEN 1 ELSE 0 END) as completed_todos,
+                        SUM(
+                            (LENGTH(title) - LENGTH(REPLACE(title, ' ', '')) + 1) +
+                            (LENGTH(COALESCE(description, '')) - LENGTH(REPLACE(COALESCE(description, ''), ' ', '')) + 1)
+                        ) as word_count
+                    FROM kanban_items
+                    WHERE is_archived = 0
+                `).get();
+
+                // Calculate devlog stats
+                const devlogStats = projectDb.prepare(`
+                    SELECT 
+                        SUM(LENGTH(content) - LENGTH(REPLACE(content, ' ', '')) + 1) as word_count
+                    FROM devlog_cells
+                `).get();
+
+                const totalWordCount = (pageStats.word_count || 0) + (todoStats.word_count || 0) + (devlogStats.word_count || 0);
+
+                return {
+                    ...project,
+                    stats: {
+                        pageCount: pageStats.page_count || 0,
+                        totalTodos: todoStats.total_todos || 0,
+                        completedTodos: todoStats.completed_todos || 0,
+                        totalWordCount: totalWordCount
+                    }
+                };
+            } catch (err) {
+                console.error(`Error fetching stats for project ${project.name}:`, err);
+                return {
+                    ...project,
+                    stats: {
+                        pageCount: 0,
+                        totalTodos: 0,
+                        completedTodos: 0,
+                        totalWordCount: 0
+                    }
+                };
+            }
+        });
+
+        // Sort by total word count descending
+        projectsWithStats.sort((a, b) => b.stats.totalWordCount - a.stats.totalWordCount);
+
+        res.json(projectsWithStats);
     } catch (error) {
         console.error('Error fetching projects:', error);
         res.status(500).json({ error: 'Failed to fetch projects' });

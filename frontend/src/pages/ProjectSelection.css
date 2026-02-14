@@ -55,7 +55,7 @@
 .project-card h2 {
     font-size: var(--font-size-lg);
     margin-bottom: var(--spacing-sm);
-    color: var(--color-text-primary);
+    color: var(--color-accent);
 }
 
 .delete-btn {
@@ -95,4 +95,55 @@
     text-align: center;
     color: var(--color-text-muted);
     font-size: var(--font-size-lg);
+}
+
+.project-card {
+    position: relative;
+    cursor: pointer;
+    padding: var(--spacing-lg);
+    background: linear-gradient(145deg, var(--color-bg-secondary), var(--color-bg-tertiary));
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    transition: all var(--transition-normal);
+}
+
+.project-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    border-color: var(--color-accent);
+}
+
+.create-project-form input {
+    flex: 1;
+    background-color: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    padding: var(--spacing-md);
+    font-size: var(--font-size-md);
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-fast);
+}
+
+.create-project-form input:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+}
+
+.create-project-form button {
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: var(--font-size-md);
+}
+
+.project-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.project-stats span {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    opacity: 0.8;
 }

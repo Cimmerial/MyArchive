@@ -225,6 +225,50 @@
     background-color: var(--color-accent);
 }
 
+/* Minimized state */
+.sidebar.sidebar-minimized {
+    min-width: 40px;
+    max-width: 40px;
+}
+
+.sidebar.sidebar-minimized .sidebar-resizer {
+    display: none;
+}
+
+.sidebar-minimized-strip {
+    width: 40px;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: var(--spacing-md);
+    border-right: 1px solid var(--color-border);
+}
+
+.sidebar-expand-btn {
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.sidebar-expand-btn:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: var(--color-bg-hover);
+}
+
+.sidebar-minimize-btn {
+    margin-left: auto;
+}
+
 .sidebar-buttons-row .sidebar-nav-icon {
     display: flex;
     align-items: center;

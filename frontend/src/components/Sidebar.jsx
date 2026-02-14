@@ -15,7 +15,20 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
     const [moveParentId, setMoveParentId] = useState(null);
     const [sidebarWidth, setSidebarWidth] = useState(parseInt(localStorage.getItem('sidebar-width') || '300'));
     const [isResizing, setIsResizing] = useState(false);
+    const [isMinimized, setIsMinimized] = useState(localStorage.getItem('sidebar-minimized') === 'true');
     const navigate = useNavigate();
+
+    const toggleMinimized = () => {
+        if (isMinimized) {
+            setIsMinimized(false);
+            localStorage.setItem('sidebar-minimized', 'false');
+            setSidebarWidth(parseInt(localStorage.getItem('sidebar-width') || '300'));
+        } else {
+            setIsMinimized(true);
+            localStorage.setItem('sidebar-minimized', 'true');
+            localStorage.setItem('sidebar-width', String(sidebarWidth));
+        }
+    };
 
     // Auto-expand all pages by default
     useEffect(() => {
@@ -192,7 +205,20 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
     };
 
     return (
-        <aside className="sidebar" style={{ width: sidebarWidth }}>
+        <aside className={`sidebar ${isMinimized ? 'sidebar-minimized' : ''}`} style={{ width: isMinimized ? 40 : sidebarWidth }}>
+            {isMinimized ? (
+                <div className="sidebar-minimized-strip">
+                    <button
+                        type="button"
+                        className="sidebar-expand-btn"
+                        onClick={toggleMinimized}
+                        title="Expand sidebar"
+                    >
+                        ▶
+                    </button>
+                </div>
+            ) : (
+                <>
             <div className="sidebar-header">
                 <SearchBar projectId={projectId} />
                 <div className="sidebar-buttons-row">
@@ -231,6 +257,14 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
                             </button>
                         </>
                     )}
+                    <button
+                        type="button"
+                        className="btn-secondary btn-icon sidebar-nav-icon sidebar-minimize-btn"
+                        onClick={toggleMinimized}
+                        title="Minimize sidebar"
+                    >
+                        ◀
+                    </button>
                 </div>
             </div>
 
@@ -333,6 +367,8 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
                 className="sidebar-resizer"
                 onMouseDown={() => setIsResizing(true)}
             />
+                </>
+            )}
         </aside>
     );
 }

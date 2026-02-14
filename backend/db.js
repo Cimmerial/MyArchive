@@ -60,7 +60,7 @@ function initializeSchema(db) {
         CREATE TABLE cells (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           page_id INTEGER NOT NULL,
-          type TEXT NOT NULL CHECK(type IN ('header', 'subheader', 'text', 'table')),
+          type TEXT NOT NULL CHECK(type IN ('header', 'subheader', 'text', 'table', 'ranking')),
           content TEXT NOT NULL DEFAULT '',
           order_index INTEGER NOT NULL,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -123,6 +123,32 @@ function initializeSchema(db) {
       db.exec("CREATE INDEX IF NOT EXISTS idx_links_target ON links(target_page_id)");
 
       console.log("Links table migration complete.");
+    })();
+  }
+
+  // Migration: add 'ranking' cell type if not present
+  const cellsTableInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='cells'").get();
+  if (cellsTableInfo && !cellsTableInfo.sql.includes("'ranking'")) {
+    console.log("Migrating 'cells' table to support 'ranking' type...");
+    db.transaction(() => {
+      db.exec("ALTER TABLE cells RENAME TO cells_old");
+      db.exec(`
+        CREATE TABLE cells (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          page_id INTEGER NOT NULL,
+          type TEXT NOT NULL CHECK(type IN ('header', 'subheader', 'text', 'table', 'ranking')),
+          content TEXT NOT NULL DEFAULT '',
+          order_index INTEGER NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
+        )
+      `);
+      db.exec("INSERT INTO cells (id, page_id, type, content, order_index, created_at, updated_at) SELECT id, page_id, type, content, order_index, created_at, updated_at FROM cells_old");
+      db.exec("DROP TABLE cells_old");
+      db.exec("CREATE INDEX IF NOT EXISTS idx_cells_page ON cells(page_id)");
+      db.exec("CREATE INDEX IF NOT EXISTS idx_cells_order ON cells(page_id, order_index)");
+      console.log("Ranking type migration complete.");
     })();
   }
 

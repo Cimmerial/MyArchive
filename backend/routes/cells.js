@@ -88,7 +88,7 @@ router.post('/:projectId/pages/:pageId/cells', getDbFromPage, (req, res) => {
         const { pageId } = req.params;
         const { type, content, orderIndex } = req.body;
 
-        if (!type || !['header', 'subheader', 'text', 'table'].includes(type)) {
+        if (!type || !['header', 'subheader', 'text', 'table', 'ranking'].includes(type)) {
             return res.status(400).json({ error: 'Invalid cell type' });
         }
 
@@ -126,7 +126,7 @@ router.put('/:projectId/cells/:cellId', getDbFromCell, (req, res) => {
         const values = [];
 
         if (type !== undefined) {
-            if (!['header', 'subheader', 'text', 'table'].includes(type)) {
+            if (!['header', 'subheader', 'text', 'table', 'ranking'].includes(type)) {
                 return res.status(400).json({ error: 'Invalid cell type' });
             }
             updates.push('type = ?');

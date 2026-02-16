@@ -12,6 +12,28 @@
 }
 
 /* Todo board font size (from Settings) */
+.kanban-page.font-size-tiny .item-title {
+    font-size: 10px;
+}
+
+.kanban-page.font-size-tiny .item-desc {
+    font-size: 9px;
+}
+
+.kanban-page.font-size-tiny .item-footer,
+.kanban-page.font-size-tiny .item-dates {
+    font-size: 8px;
+}
+
+.kanban-page.font-size-tiny .column-header h3 {
+    font-size: 11px;
+}
+
+.kanban-page.font-size-tiny .count {
+    font-size: 9px;
+    padding: 1px 6px;
+}
+
 .kanban-page.font-size-small .item-title {
     font-size: 12px;
 }
@@ -58,6 +80,50 @@
     overflow: hidden;
     /* Columns scroll independently */
     padding: var(--spacing-md);
+    align-items: center;
+    /* Center horizontally for narrow boards */
+}
+
+/* Board Column Width Options */
+.kanban-page.column-width-verywide .kanban-column {
+    min-width: 400px;
+    max-width: 600px;
+}
+
+.kanban-page.column-width-wide .kanban-column {
+    min-width: 320px;
+    max-width: 450px;
+}
+
+.kanban-page.column-width-default .kanban-column {
+    min-width: 280px;
+    max-width: 350px;
+}
+
+.kanban-page.column-width-thin .kanban-column {
+    min-width: 200px;
+    max-width: 280px;
+}
+
+/* Nth-child overrides for first three columns (Priority, Other, Icebox) 15% wider than current setting */
+.kanban-page.column-width-verywide .kanban-column:nth-child(-n+3) {
+    min-width: 460px;
+    max-width: 690px;
+}
+
+.kanban-page.column-width-wide .kanban-column:nth-child(-n+3) {
+    min-width: 368px;
+    max-width: 518px;
+}
+
+.kanban-page.column-width-default .kanban-column:nth-child(-n+3) {
+    min-width: 322px;
+    max-width: 403px;
+}
+
+.kanban-page.column-width-thin .kanban-column:nth-child(-n+3) {
+    min-width: 230px;
+    max-width: 322px;
 }
 
 .kanban-header {
@@ -101,12 +167,12 @@
     height: 100%;
     overflow-x: auto;
     padding-bottom: var(--spacing-md);
+    width: 100%;
 }
 
 .kanban-column {
-    flex: 1;
-    min-width: 280px;
-    max-width: 350px;
+    flex: 0 0 auto;
+    /* Don't grow/shrink, use defined width */
     background-color: var(--color-bg-secondary);
     border-radius: var(--border-radius-md);
     display: flex;
@@ -114,20 +180,43 @@
     border: 1px solid var(--color-border);
 }
 
-/* First three columns (Priority, Other, Icebox) 15% wider */
-.kanban-column:nth-child(-n+3) {
-    min-width: 322px;
-    max-width: 403px;
-}
+/* Base nth-child rule removed or integrated into column-width logic above */
 
 .column-header {
     padding: var(--spacing-md);
     border-bottom: 1px solid var(--color-border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     background-color: var(--color-bg-tertiary);
     border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.column-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.column-header-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.btn-toggle-all {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    padding: 2px 6px;
+    font-size: 10px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-toggle-all:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-text-muted);
+    background-color: var(--color-bg-secondary);
 }
 
 .column-header h3 {
@@ -234,6 +323,30 @@
     /* Green indicator */
 }
 
+.kanban-item.minimized {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    cursor: pointer;
+    background-color: #000 !important;
+    border-color: #222;
+}
+
+.kanban-item.minimized .item-header {
+    margin-bottom: 0;
+    align-items: center;
+}
+
+.kanban-item.minimized .item-title {
+    font-weight: 500;
+    color: #999;
+    /* Brighter than body, but still muted */
+}
+
+.title-ellipsis {
+    color: var(--color-text-muted);
+    font-weight: bold;
+}
+
 .kanban-item.tag-yellow {
     border-left: 3px solid #f0c000;
 }
@@ -327,6 +440,50 @@
     color: var(--color-text-secondary);
     white-space: pre-wrap;
     margin-bottom: 8px;
+}
+
+.item-desc-minimized {
+    font-size: var(--font-size-sm);
+    color: #444;
+    /* Darker description */
+    white-space: pre-wrap;
+    margin-bottom: 4px;
+    background-color: transparent;
+    padding: 0 6px;
+    border-radius: 4px;
+    line-height: 1.4;
+}
+
+.clamp-1,
+.clamp-3,
+.clamp-5 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.clamp-1 {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+}
+
+.clamp-3 {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+}
+
+.clamp-5 {
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+}
+
+.line-dots {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    line-height: 1;
+    margin: 2px 0;
+    text-align: center;
+    letter-spacing: 2px;
 }
 
 .wiki-link {
@@ -425,4 +582,16 @@
 .btn-xs {
     padding: 2px 8px;
     font-size: 0.8rem;
+}
+
+.footer-separator {
+    color: var(--color-border);
+    margin: 0 4px;
+    opacity: 0.5;
+}
+
+.word-count {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
 }

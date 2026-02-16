@@ -15,6 +15,7 @@ if (!existsSync(PROJECTS_DIR)) {
 
 // Store active database connections
 const dbConnections = new Map();
+// Migration trigger comment
 
 /**
  * Get or create database connection for a project
@@ -252,6 +253,9 @@ function initializeSchema(db) {
   const kanbanCols = db.prepare("PRAGMA table_info(kanban_items)").all();
   if (kanbanCols.some((c) => c.name === 'tag_color') === false) {
     db.exec('ALTER TABLE kanban_items ADD COLUMN tag_color TEXT');
+  }
+  if (kanbanCols.some((c) => c.name === 'is_minimized') === false) {
+    db.exec('ALTER TABLE kanban_items ADD COLUMN is_minimized BOOLEAN DEFAULT 0');
   }
 }
 

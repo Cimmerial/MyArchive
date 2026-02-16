@@ -219,154 +219,131 @@ function Sidebar({ projectId, project, allPages, currentPage, onCreatePage, onDe
                 </div>
             ) : (
                 <>
-            <div className="sidebar-header">
-                <SearchBar projectId={projectId} />
-                <div className="sidebar-buttons-row">
-                    <button
-                        className="btn-primary btn-sm-compact"
-                        onClick={() => {
-                            setNewPageParent(null);
-                            setShowCreateModal(true);
-                        }}
-                        title="Create New Page"
-                    >
-                        +
-                    </button>
-                    {project && (
-                        <>
+                    <div className="sidebar-header">
+                        <SearchBar projectId={projectId} />
+                        <div className="sidebar-buttons-row">
                             <button
-                                className={`btn-secondary btn-icon sidebar-nav-icon ${currentPage?.id === 'main' ? 'active' : ''}`}
-                                onClick={() => navigate(`/project/${projectId}`)}
-                                title={`${project.display_name} Main Page`}
+                                className="btn-primary btn-sm-compact"
+                                onClick={() => {
+                                    setNewPageParent(null);
+                                    setShowCreateModal(true);
+                                }}
+                                title="Create New Page"
                             >
-                                <House />
+                                +
                             </button>
-                            <button
-                                className={`btn-secondary btn-icon sidebar-nav-icon ${currentPage?.id === 'todo' ? 'active' : ''}`}
-                                onClick={() => navigate(`/project/${projectId}/todo`)}
-                                title="Kanban Board"
-                            >
-                                <CheckSquare />
-                            </button>
-                            <button
-                                className={`btn-secondary btn-icon sidebar-nav-icon ${currentPage?.id === 'devlog' ? 'active' : ''}`}
-                                onClick={() => navigate(`/project/${projectId}/devlog`)}
-                                title="Developer Log"
-                            >
-                                <ScrollText />
-                            </button>
-                        </>
+                            {project && (
+                                <button
+                                    type="button"
+                                    className="btn-secondary btn-icon sidebar-nav-icon sidebar-minimize-btn"
+                                    onClick={toggleMinimized}
+                                    title="Minimize sidebar"
+                                >
+                                    ◀
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="page-tree">
+                        {allPages.length === 0 ? (
+                            <div className="empty-state text-muted">
+                                No pages yet. Create one to get started!
+                            </div>
+                        ) : (
+                            renderPageTree(getRootPages())
+                        )}
+                    </div>
+
+                    {showCreateModal && (
+                        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <h3>Create New Page</h3>
+                                <form onSubmit={handleCreatePage}>
+                                    <input
+                                        type="text"
+                                        placeholder="Page title..."
+                                        value={newPageTitle}
+                                        onChange={(e) => setNewPageTitle(e.target.value)}
+                                        autoFocus
+                                    />
+                                    <div className="form-group">
+                                        <label>Parent Page (optional)</label>
+                                        <select
+                                            value={newPageParent || ''}
+                                            onChange={(e) => setNewPageParent(e.target.value ? parseInt(e.target.value) : null)}
+                                        >
+                                            <option value="">Root Level</option>
+                                            {allPages
+                                                .slice()
+                                                .sort((a, b) => a.path.localeCompare(b.path))
+                                                .map(page => (
+                                                    <option key={page.id} value={page.id}>
+                                                        {page.path}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+                                    <div className="modal-actions">
+                                        <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>
+                                            Cancel
+                                        </button>
+                                        <button type="submit" className="btn-primary">
+                                            Create
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     )}
-                    <button
-                        type="button"
-                        className="btn-secondary btn-icon sidebar-nav-icon sidebar-minimize-btn"
-                        onClick={toggleMinimized}
-                        title="Minimize sidebar"
-                    >
-                        ◀
-                    </button>
-                </div>
-            </div>
 
-            <div className="page-tree">
-                {allPages.length === 0 ? (
-                    <div className="empty-state text-muted">
-                        No pages yet. Create one to get started!
-                    </div>
-                ) : (
-                    renderPageTree(getRootPages())
-                )}
-            </div>
+                    {moveTarget && (
+                        <div className="modal-overlay" onClick={() => setMoveTarget(null)}>
+                            <div className="modal" onClick={(e) => e.stopPropagation()}>
+                                <h3>Move Page: {moveTarget.title}</h3>
+                                <form onSubmit={handleMovePage}>
+                                    <div className="form-group">
+                                        <label>Select New Parent</label>
+                                        <select
+                                            value={moveParentId || ''}
+                                            onChange={(e) => setMoveParentId(e.target.value ? parseInt(e.target.value) : null)}
+                                        >
+                                            <option value="">Root Level</option>
+                                            {allPages
+                                                .filter(p => p.id !== moveTarget.id && !isDescendant(moveTarget.id, p.id))
+                                                .sort((a, b) => a.path.localeCompare(b.path))
+                                                .map(page => (
+                                                    <option key={page.id} value={page.id}>
+                                                        {page.path}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+                                    <div className="modal-actions">
+                                        <button type="button" className="btn-secondary" onClick={() => setMoveTarget(null)}>
+                                            Cancel
+                                        </button>
+                                        <button type="submit" className="btn-primary">
+                                            Move
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
 
-            {showCreateModal && (
-                <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <h3>Create New Page</h3>
-                        <form onSubmit={handleCreatePage}>
-                            <input
-                                type="text"
-                                placeholder="Page title..."
-                                value={newPageTitle}
-                                onChange={(e) => setNewPageTitle(e.target.value)}
-                                autoFocus
-                            />
-                            <div className="form-group">
-                                <label>Parent Page (optional)</label>
-                                <select
-                                    value={newPageParent || ''}
-                                    onChange={(e) => setNewPageParent(e.target.value ? parseInt(e.target.value) : null)}
-                                >
-                                    <option value="">Root Level</option>
-                                    {allPages
-                                        .slice()
-                                        .sort((a, b) => a.path.localeCompare(b.path))
-                                        .map(page => (
-                                            <option key={page.id} value={page.id}>
-                                                {page.path}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
-                            <div className="modal-actions">
-                                <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="btn-primary">
-                                    Create
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {moveTarget && (
-                <div className="modal-overlay" onClick={() => setMoveTarget(null)}>
-                    <div className="modal" onClick={(e) => e.stopPropagation()}>
-                        <h3>Move Page: {moveTarget.title}</h3>
-                        <form onSubmit={handleMovePage}>
-                            <div className="form-group">
-                                <label>Select New Parent</label>
-                                <select
-                                    value={moveParentId || ''}
-                                    onChange={(e) => setMoveParentId(e.target.value ? parseInt(e.target.value) : null)}
-                                >
-                                    <option value="">Root Level</option>
-                                    {allPages
-                                        .filter(p => p.id !== moveTarget.id && !isDescendant(moveTarget.id, p.id))
-                                        .sort((a, b) => a.path.localeCompare(b.path))
-                                        .map(page => (
-                                            <option key={page.id} value={page.id}>
-                                                {page.path}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
-                            <div className="modal-actions">
-                                <button type="button" className="btn-secondary" onClick={() => setMoveTarget(null)}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="btn-primary">
-                                    Move
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {deleteTarget && (
-                <DeleteConfirmModal
-                    itemType="page"
-                    itemName={deleteTarget.title}
-                    onConfirm={handleDeletePage}
-                    onCancel={() => setDeleteTarget(null)}
-                />
-            )}
-            <div
-                className="sidebar-resizer"
-                onMouseDown={() => setIsResizing(true)}
-            />
+                    {deleteTarget && (
+                        <DeleteConfirmModal
+                            itemType="page"
+                            itemName={deleteTarget.title}
+                            onConfirm={handleDeletePage}
+                            onCancel={() => setDeleteTarget(null)}
+                        />
+                    )}
+                    <div
+                        className="sidebar-resizer"
+                        onMouseDown={() => setIsResizing(true)}
+                    />
                 </>
             )}
         </aside>

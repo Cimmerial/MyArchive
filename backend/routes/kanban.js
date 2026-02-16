@@ -99,7 +99,7 @@ router.post('/:projectId/kanban', validateProject, (req, res) => {
 router.put('/:projectId/kanban/:itemId', validateProject, (req, res) => {
     try {
         const { itemId } = req.params;
-        const { column, title, description, orderIndex, isCompleted, tag_color } = req.body;
+        const { column, title, description, orderIndex, isCompleted, tag_color, is_minimized } = req.body;
 
         const item = req.projectDb.prepare('SELECT * FROM kanban_items WHERE id = ?').get(itemId);
         if (!item) return res.status(404).json({ error: 'Item not found' });
@@ -126,6 +126,10 @@ router.put('/:projectId/kanban/:itemId', validateProject, (req, res) => {
         if (tag_color !== undefined) {
             updates.push('tag_color = ?');
             values.push(tag_color);
+        }
+        if (is_minimized !== undefined) {
+            updates.push('is_minimized = ?');
+            values.push(is_minimized ? 1 : 0);
         }
 
         // Handle completion date logic automatically based on column or explicit flag
@@ -199,13 +203,31 @@ router.post('/:projectId/kanban/reorder', validateProject, (req, res) => {
             return res.status(400).json({ error: 'Items array is required' });
         }
 
-        const updateStmt = req.projectDb.prepare(
-            'UPDATE kanban_items SET order_index = ?, column = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-        );
-
         const transaction = req.projectDb.transaction((itemsToUpdate) => {
             for (const item of itemsToUpdate) {
-                updateStmt.run(item.orderIndex, item.column, item.id);
+                const updates = [];
+                const values = [];
+
+                if (item.orderIndex !== undefined) {
+                    updates.push('order_index = ?');
+                    values.push(item.orderIndex);
+                }
+                if (item.column !== undefined) {
+                    updates.push('column = ?');
+                    values.push(item.column);
+                }
+                if (item.is_minimized !== undefined) {
+                    updates.push('is_minimized = ?');
+                    values.push(item.is_minimized ? 1 : 0);
+                }
+
+                if (updates.length > 0) {
+                    updates.push('updated_at = CURRENT_TIMESTAMP');
+                    values.push(item.id);
+                    req.projectDb.prepare(
+                        `UPDATE kanban_items SET ${updates.join(', ')} WHERE id = ?`
+                    ).run(...values);
+                }
             }
         });
 

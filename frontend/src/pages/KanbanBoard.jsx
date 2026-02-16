@@ -183,7 +183,7 @@ function TaskEditModal({ item, onSave, onCancel, onContextMenu }) {
 }
 
 // --- Sortable Item Component ---
-function SortableItem({ item, onUpdate, onDelete, onContextMenu, onOpenEditModal, allPages, projectId }) {
+function SortableItem({ item, onUpdate, onDelete, onContextMenu, onOpenEditModal, allPages, projectId, todoBoardMinLines }) {
     const {
         attributes,
         listeners,
@@ -275,88 +275,124 @@ function SortableItem({ item, onUpdate, onDelete, onContextMenu, onOpenEditModal
         return <div className="item-date" title={label}> <Calendar size={10} style={{ display: 'inline', marginRight: 2 }} /> {new Date(dateString).toLocaleDateString()}</div>;
     };
 
+    const renderDescriptionLines = (text, option) => {
+        if (!text || option === 'none') return null;
+
+        if (option === '1') {
+            return <div className="clamp-1">{renderDescription(text)}</div>;
+        }
+        if (option === '3') {
+            return <div className="clamp-3">{renderDescription(text)}</div>;
+        }
+        if (option === '5') {
+            return <div className="clamp-5">{renderDescription(text)}</div>;
+        }
+        return renderDescription(text);
+    };
+
     const isCompleted = item.column === 'Completed';
+    const isMinimized = item.is_minimized;
+    const wordCount = ((item.title || "") + " " + (item.description || "")).trim().split(/\s+/).filter(Boolean).length;
 
     return (
-        <div ref={setNodeRef} style={style} className={`kanban-item ${isCompleted ? 'completed' : ''} ${item.tag_color === 'yellow' ? 'tag-yellow' : ''} ${item.tag_color === 'red' ? 'tag-red' : ''}`}>
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={`kanban-item ${isCompleted ? 'completed' : ''} ${isMinimized ? 'minimized' : ''} ${item.tag_color === 'yellow' ? 'tag-yellow' : ''} ${item.tag_color === 'red' ? 'tag-red' : ''}`}
+            onClick={(e) => {
+                // Ignore clicks on links or buttons
+                if (e.target.closest('a') || e.target.closest('button')) return;
+                onUpdate(item.id, { is_minimized: !item.is_minimized });
+            }}
+        >
             <div
-                    className="item-content"
-                    onContextMenu={(e) => {
-                        const selection = window.getSelection();
-                        const text = selection.toString();
-                        if (text) {
-                            e.preventDefault();
-                            // We need to pass this up to the board
-                            // Use a custom event or prop? We'll rely on a prop added below.
-                            // But for now, since I can't easily change the signature in this chunk without re-writing `SortableItem` entirely...
-                            // Actually I AM rewriting a large chunk. I will add `onItemsContextMenu` prop to SortableItem.
-                        }
-                    }}
-                >
-                    <div className="item-header">
-                        {/* Drag Handle - Added touch-action: none inline style to enforce it */}
-                        <div className="item-drag-handle" {...attributes} {...listeners} style={{ touchAction: 'none' }}>
-                            ⋮⋮
-                        </div>
-                        <div className="item-title-col">
-                            <div className="item-title" onContextMenu={(e) => {
-                                const selection = window.getSelection();
-                                if (selection.toString().trim()) {
-                                    onContextMenu(item, 'context-menu', e, selection.toString(), 'title');
-                                }
-                            }}>{renderDescription(item.title)}</div>
-                        </div>
-                        {/* Completion Button */}
-                        <button
-                            className={`btn-icon-check ${isCompleted ? 'checked' : ''}`}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (isCompleted) {
-                                    // Restore
-                                    const targetCol = item.original_column || 'Priority Todos';
-                                    onUpdate(item.id, { column: targetCol });
-                                } else {
-                                    // Complete
-                                    onUpdate(item.id, { column: 'Completed', original_column: item.column });
-                                }
-                            }}
-                            title={isCompleted ? "Mark as Incomplete" : "Mark as Completed"}
-                        >
-                            {isCompleted ? <SquareCheckBig size={18} /> : <Square size={18} />}
-                        </button>
+                className="item-content"
+                onContextMenu={(e) => {
+                    const selection = window.getSelection();
+                    const text = selection.toString();
+                    if (text) {
+                        e.preventDefault();
+                        // We need to pass this up to the board
+                        // Use a custom event or prop? We'll rely on a prop added below.
+                        // But for now, since I can't easily change the signature in this chunk without re-writing `SortableItem` entirely...
+                        // Actually I AM rewriting a large chunk. I will add `onItemsContextMenu` prop to SortableItem.
+                    }
+                }}
+            >
+                <div className="item-header">
+                    {/* Drag Handle - Added touch-action: none inline style to enforce it */}
+                    <div className="item-drag-handle" {...attributes} {...listeners} style={{ touchAction: 'none' }}>
+                        ⋮⋮
                     </div>
-                    {item.description && <div className="item-desc"
-                        onContextMenu={(e) => {
+                    <div className="item-title-col">
+                        <div className="item-title" onContextMenu={(e) => {
                             const selection = window.getSelection();
                             if (selection.toString().trim()) {
-                                onContextMenu(item, 'context-menu', e, selection.toString(), 'description');
+                                onContextMenu(item, 'context-menu', e, selection.toString(), 'title');
                             }
-                        }}
-                    >{renderDescription(item.description)}</div>}
-                    <div className="item-footer">
-                        <div className="item-dates">
-                            {formatDate(item.created_at, "Created")}
-                            <div className="item-tag-dots" onClick={e => e.stopPropagation()}>
-                                <button
-                                    type="button"
-                                    className={`tag-dot yellow ${item.tag_color === 'yellow' ? 'active' : ''}`}
-                                    title="Importance"
-                                    onClick={() => onUpdate(item.id, { tag_color: item.tag_color === 'yellow' ? null : 'yellow' })}
-                                />
-                                <button
-                                    type="button"
-                                    className={`tag-dot red ${item.tag_color === 'red' ? 'active' : ''}`}
-                                    title="Error"
-                                    onClick={() => onUpdate(item.id, { tag_color: item.tag_color === 'red' ? null : 'red' })}
-                                />
-                            </div>
-                        </div>
-                        <div className="item-controls-hover">
-                            <button className="btn-icon-sm" onClick={() => onOpenEditModal(item)}>✎</button>
-                            <button className="btn-icon-sm delete" onClick={() => onDelete(item, 'delete')}>×</button>
+                        }}>
+                            {renderDescription(item.title)}
+                            {Boolean(isMinimized) && <span className="title-ellipsis"> ...</span>}
                         </div>
                     </div>
+                    {/* Completion Button */}
+                    <button
+                        className={`btn-icon-check ${isCompleted ? 'checked' : ''}`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (isCompleted) {
+                                // Restore
+                                const targetCol = item.original_column || 'Priority Todos';
+                                onUpdate(item.id, { column: targetCol });
+                            } else {
+                                // Complete
+                                onUpdate(item.id, { column: 'Completed', original_column: item.column });
+                            }
+                        }}
+                        title={isCompleted ? "Mark as Incomplete" : "Mark as Completed"}
+                    >
+                        {isCompleted ? <SquareCheckBig size={18} /> : <Square size={18} />}
+                    </button>
                 </div>
+                {!isMinimized && item.description && <div className="item-desc"
+                    onContextMenu={(e) => {
+                        const selection = window.getSelection();
+                        if (selection.toString().trim()) {
+                            onContextMenu(item, 'context-menu', e, selection.toString(), 'description');
+                        }
+                    }}
+                >{renderDescription(item.description)}</div>}
+                {Boolean(isMinimized) && item.description && todoBoardMinLines !== 'none' && (
+                    <div className="item-desc-minimized">
+                        {renderDescriptionLines(item.description, todoBoardMinLines)}
+                    </div>
+                )}
+                <div className="item-footer">
+                    <div className="item-dates">
+                        {formatDate(item.created_at, "Created")}
+                        <span className="footer-separator"> | </span>
+                        <span className="word-count">({wordCount})</span>
+                        <div className="item-tag-dots" onClick={e => e.stopPropagation()}>
+                            <button
+                                type="button"
+                                className={`tag-dot yellow ${item.tag_color === 'yellow' ? 'active' : ''}`}
+                                title="Importance"
+                                onClick={() => onUpdate(item.id, { tag_color: item.tag_color === 'yellow' ? null : 'yellow' })}
+                            />
+                            <button
+                                type="button"
+                                className={`tag-dot red ${item.tag_color === 'red' ? 'active' : ''}`}
+                                title="Error"
+                                onClick={() => onUpdate(item.id, { tag_color: item.tag_color === 'red' ? null : 'red' })}
+                            />
+                        </div>
+                    </div>
+                    <div className="item-controls-hover">
+                        <button className="btn-icon-sm" onClick={(e) => { e.stopPropagation(); onOpenEditModal(item); }}>✎</button>
+                        <button className="btn-icon-sm delete" onClick={(e) => { e.stopPropagation(); onDelete(item, 'delete'); }}>×</button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
@@ -380,6 +416,8 @@ function KanbanBoard() {
     );
     const [globalSearchQuery, setGlobalSearchQuery] = useState('');
     const [todoBoardFontSize, setTodoBoardFontSize] = useState(() => localStorage.getItem('todo-board-font-size') || 'medium');
+    const [todoBoardColumnWidth, setTodoBoardColumnWidth] = useState(() => localStorage.getItem('todo-board-column-width') || 'default');
+    const [todoBoardMinLines, setTodoBoardMinLines] = useState(() => localStorage.getItem('todo-board-minimized-lines') || '5');
 
     // Initial Load
     useEffect(() => {
@@ -388,10 +426,36 @@ function KanbanBoard() {
     }, [projectId]);
 
     useEffect(() => {
-        const handler = () => setTodoBoardFontSize(localStorage.getItem('todo-board-font-size') || 'medium');
-        window.addEventListener('todo-board-font-size-changed', handler);
-        return () => window.removeEventListener('todo-board-font-size-changed', handler);
+        const handlerFontSize = () => setTodoBoardFontSize(localStorage.getItem('todo-board-font-size') || 'medium');
+        const handlerWidth = () => setTodoBoardColumnWidth(localStorage.getItem('todo-board-column-width') || 'default');
+        const handlerMinLines = () => setTodoBoardMinLines(localStorage.getItem('todo-board-minimized-lines') || '5');
+
+        window.addEventListener('todo-board-font-size-changed', handlerFontSize);
+        window.addEventListener('todo-board-column-width-changed', handlerWidth);
+        window.addEventListener('todo-board-minimized-lines-changed', handlerMinLines);
+
+        return () => {
+            window.removeEventListener('todo-board-font-size-changed', handlerFontSize);
+            window.removeEventListener('todo-board-column-width-changed', handlerWidth);
+            window.removeEventListener('todo-board-minimized-lines-changed', handlerMinLines);
+        };
     }, []);
+
+    const toggleAllInColumn = async (column, minimized) => {
+        const columnItems = items.filter(i => i.column === column);
+        try {
+            // Optimistic update
+            const updatedItems = items.map(i => i.column === column ? { ...i, is_minimized: minimized ? 1 : 0 } : i);
+            setItems(updatedItems);
+
+            // Batch update for this column
+            const updates = columnItems.map(i => ({ id: i.id, column: i.column, is_minimized: minimized ? 1 : 0 }));
+            await axios.post(`/api/projects/${projectId}/kanban/reorder`, { items: updates });
+        } catch (error) {
+            console.error("Failed to toggle items in column:", error);
+            loadData(); // Revert on fail
+        }
+    };
 
     const loadData = async () => {
         try {
@@ -658,7 +722,7 @@ function KanbanBoard() {
     if (loading) return <div className="kanban-page loading">Loading...</div>;
 
     return (
-        <div className={`kanban-page font-size-${todoBoardFontSize}`}>
+        <div className={`kanban-page font-size-${todoBoardFontSize} column-width-${todoBoardColumnWidth}`}>
             <Header project={project} currentPage={{ id: 'kanban-board', title: 'Todo Board' }} allPages={allPages} />
             <div className="wiki-content">
                 <Sidebar
@@ -711,8 +775,14 @@ function KanbanBoard() {
                                 return (
                                     <div key={column} className="kanban-column">
                                         <div className="column-header">
-                                            <h3>{column}</h3>
-                                            <span className="count">{columnItems.length}</span>
+                                            <div className="column-title-row">
+                                                <h3>{column}</h3>
+                                                <span className="count">{columnItems.length}</span>
+                                            </div>
+                                            <div className="column-header-actions">
+                                                <button className="btn-toggle-all" onClick={() => toggleAllInColumn(column, true)} title="Minimize All">− All</button>
+                                                <button className="btn-toggle-all" onClick={() => toggleAllInColumn(column, false)} title="Maximize All">+ All</button>
+                                            </div>
                                         </div>
                                         <div className="column-tools">
                                             <input
@@ -742,6 +812,7 @@ function KanbanBoard() {
                                                             onOpenEditModal={setEditingItem}
                                                             allPages={allPages}
                                                             projectId={projectId}
+                                                            todoBoardMinLines={todoBoardMinLines}
                                                         />
                                                     ))}
                                                     {/* Drop zone placeholder if empty */}

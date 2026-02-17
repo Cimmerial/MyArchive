@@ -13,6 +13,13 @@ function Header({ project, currentPage, allPages }) {
     const [todoBoardFontSize, setTodoBoardFontSize] = useState(localStorage.getItem(TODO_BOARD_FONT_KEY) || 'medium');
     const [todoBoardColumnWidth, setTodoBoardColumnWidth] = useState(localStorage.getItem(TODO_BOARD_COLUMN_WIDTH_KEY) || 'default');
     const [todoBoardMinLines, setTodoBoardMinLines] = useState(localStorage.getItem(TODO_BOARD_MIN_LINES_KEY) || '5');
+    const [customButtonText, setCustomButtonText] = useState(localStorage.getItem('custom-button-text') || 'T.P.S TRADING');
+    const [customButtonLink, setCustomButtonLink] = useState(localStorage.getItem('custom-button-link') || 'http://localhost:3000/');
+    const [isLive, setIsLive] = useState(false);
+    const [showCustomButton, setShowCustomButton] = useState(localStorage.getItem('show-custom-header-button') !== 'false');
+
+
+
     const navigate = useNavigate();
     const { projectId } = useParams();
 
@@ -26,8 +33,36 @@ function Header({ project, currentPage, allPages }) {
         if (isSettingsOpen) {
             document.addEventListener('click', handleClickOutside);
         }
-        return () => document.removeEventListener('click', handleClickOutside);
-    }, [currentFont, isSettingsOpen]);
+
+        // Server liveness check
+        const checkLiveness = async () => {
+            try {
+                // Use no-cors to avoid CORS issues for simple connectivity checks
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+                await fetch(customButtonLink, {
+                    mode: 'no-cors',
+                    signal: controller.signal,
+                    cache: 'no-cache'
+                });
+
+                clearTimeout(timeoutId);
+                setIsLive(true);
+            } catch (err) {
+                setIsLive(false);
+            }
+        };
+
+        checkLiveness();
+        const intervalId = setInterval(checkLiveness, 10000); // Check every 10 seconds
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+            clearInterval(intervalId);
+        };
+    }, [currentFont, isSettingsOpen, customButtonLink]);
+
 
     const handleTodoBoardFontSize = (size) => {
         setTodoBoardFontSize(size);
@@ -46,6 +81,24 @@ function Header({ project, currentPage, allPages }) {
         localStorage.setItem(TODO_BOARD_MIN_LINES_KEY, lines);
         window.dispatchEvent(new CustomEvent('todo-board-minimized-lines-changed', { detail: lines }));
     };
+
+    const handleCustomButtonText = (text) => {
+        setCustomButtonText(text);
+        localStorage.setItem('custom-button-text', text);
+    };
+
+    const handleCustomButtonLink = (link) => {
+        setCustomButtonLink(link);
+        localStorage.setItem('custom-button-link', link);
+    };
+
+    const handleShowCustomButtonToggle = () => {
+        const newValue = !showCustomButton;
+        setShowCustomButton(newValue);
+        localStorage.setItem('show-custom-header-button', newValue.toString());
+    };
+
+
 
     const getFontFamily = (fontName) => {
         switch (fontName) {
@@ -83,6 +136,15 @@ function Header({ project, currentPage, allPages }) {
 
     const breadcrumbs = buildBreadcrumbs();
 
+    const handleCustomButtonClick = (e) => {
+        e.preventDefault();
+        if (!isLive) return;
+
+        // Using a named window and focusing it
+        const win = window.open(customButtonLink, 'TPS_TRADING_PORTAL');
+        if (win) win.focus();
+    };
+
     return (
         <header className="wiki-header">
             <div className="header-left">
@@ -117,7 +179,21 @@ function Header({ project, currentPage, allPages }) {
                     {projectId && (
                         <>
                             <div className="main-nav-buttons">
+                                {showCustomButton && (
+                                    <>
+                                        <a
+                                            href={isLive ? customButtonLink : '#'}
+                                            className={`custom-bubble-btn ${!isLive ? 'offline' : ''}`}
+                                            onClick={handleCustomButtonClick}
+                                        >
+                                            {customButtonText}
+                                        </a>
+                                        <div className="nav-separator">|</div>
+                                    </>
+                                )}
                                 <Link
+
+
                                     to={`/project/${projectId}`}
                                     className={`nav-icon-btn ${currentPage?.id === 'main' ? 'active' : ''}`}
                                     title="Home"
@@ -170,7 +246,15 @@ function Header({ project, currentPage, allPages }) {
                             setCurrentFont={setCurrentFont}
                             onClose={() => setIsSettingsOpen(false)}
                             isKanban={currentPage?.id === 'kanban-board'}
+                            customButtonText={customButtonText}
+                            handleCustomButtonText={handleCustomButtonText}
+                            customButtonLink={customButtonLink}
+                            handleCustomButtonLink={handleCustomButtonLink}
+                            showCustomButton={showCustomButton}
+                            handleShowCustomButtonToggle={handleShowCustomButtonToggle}
                         />
+
+
                     )}
                 </div>
             </div>
@@ -183,8 +267,13 @@ function SettingsModal({
     todoBoardColumnWidth, handleTodoBoardColumnWidth,
     todoBoardFontSize, handleTodoBoardFontSize,
     currentFont, setCurrentFont,
-    onClose, isKanban
+    onClose, isKanban,
+    customButtonText, handleCustomButtonText,
+    customButtonLink, handleCustomButtonLink,
+    showCustomButton, handleShowCustomButtonToggle
 }) {
+
+
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal settings-modal" onClick={e => e.stopPropagation()}>
@@ -203,7 +292,37 @@ function SettingsModal({
                                 onChange={setCurrentFont}
                             />
                         </div>
+                        <div className="setting-item">
+                            <label>Custom Button Text</label>
+                            <input
+                                type="text"
+                                className="settings-input"
+                                value={customButtonText}
+                                onChange={(e) => handleCustomButtonText(e.target.value)}
+                                placeholder="T.P.S TRADING"
+                            />
+                        </div>
+                        <div className="setting-item">
+                            <label>Custom Button Link</label>
+                            <input
+                                type="text"
+                                className="settings-input"
+                                value={customButtonLink}
+                                onChange={(e) => handleCustomButtonLink(e.target.value)}
+                                placeholder="http://localhost:3000/"
+                            />
+                        </div>
+                        <div className="setting-item checkbox-setting">
+                            <label>Show Custom Button</label>
+                            <input
+                                type="checkbox"
+                                checked={showCustomButton}
+                                onChange={handleShowCustomButtonToggle}
+                            />
+                        </div>
                     </div>
+
+
                     {isKanban && (
                         <div className="settings-modal-column">
                             <h4>Kanban Board</h4>

@@ -28,27 +28,28 @@ import './KanbanBoard.css';
 const COLUMNS = ['Priority Todos', 'Other Todos', 'Icebox', 'Completed'];
 const ACTIVE_COLUMNS = COLUMNS.slice(0, 3); // Priority, Other, Icebox (exclude Completed)
 
-/** Fuzzy search: exact substring = 0, fuzzy subsequence = 1, no match = 2. Lower is better. */
+/** Restrictive search: all query words must be present as substrings in title or description. */
 function searchRank(item, query) {
     const q = query.trim().toLowerCase();
     if (!q) return { match: true, rank: 0 };
+
+    const words = q.split(/\s+/).filter(Boolean);
     const title = (item.title || '').toLowerCase();
     const desc = (item.description || '').toLowerCase();
-    const exactTitle = title.includes(q);
-    const exactDesc = desc.includes(q);
-    if (exactTitle) return { match: true, rank: 0 };
-    if (exactDesc) return { match: true, rank: 1 };
-    // Fuzzy: query chars appear in order
-    const fuzzy = (text) => {
-        let j = 0;
-        for (let i = 0; i < text.length && j < q.length; i++) {
-            if (text[i] === q[j]) j++;
-        }
-        return j === q.length;
-    };
-    if (fuzzy(title)) return { match: true, rank: 2 };
-    if (fuzzy(desc)) return { match: true, rank: 3 };
-    return { match: false, rank: 99 };
+
+    // Check if all words are present in title or description
+    const allWordsMatch = words.every(word => title.includes(word) || desc.includes(word));
+
+    if (!allWordsMatch) return { match: false, rank: 99 };
+
+    // Ranking: 
+    // 0: exact full query match in title
+    // 1: exact full query match in description
+    // 2: all words match (not necessarily in order or in same field)
+    if (title.includes(q)) return { match: true, rank: 0 };
+    if (desc.includes(q)) return { match: true, rank: 1 };
+
+    return { match: true, rank: 2 };
 }
 
 // --- Create Modal Component ---
@@ -419,6 +420,9 @@ function KanbanBoard() {
     const [todoBoardColumnWidth, setTodoBoardColumnWidth] = useState(() => localStorage.getItem('todo-board-column-width') || 'default');
     const [todoBoardMinLines, setTodoBoardMinLines] = useState(() => localStorage.getItem('todo-board-minimized-lines') || '5');
 
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editedTitle, setEditedTitle] = useState('');
+
     // Initial Load
     useEffect(() => {
         loadData();
@@ -467,6 +471,7 @@ function KanbanBoard() {
 
             const proj = projRes.data.find(p => p.id === parseInt(projectId));
             setProject(proj);
+            setEditedTitle(proj.display_name);
             setAllPages(pagesRes.data);
             setItems(itemsRes.data);
         } catch (error) {
@@ -578,6 +583,25 @@ function KanbanBoard() {
             field,
             updateCallback
         });
+    };
+
+    const handleRenameProject = async () => {
+        if (!editedTitle.trim() || editedTitle === project.display_name) {
+            setIsEditingTitle(false);
+            setEditedTitle(project.display_name);
+            return;
+        }
+
+        try {
+            const response = await axios.put(`/api/projects/${projectId}`, { displayName: editedTitle });
+            setProject(response.data);
+            setIsEditingTitle(false);
+        } catch (error) {
+            console.error("Failed to rename project:", error);
+            alert("Failed to rename project");
+            setEditedTitle(project.display_name);
+            setIsEditingTitle(false);
+        }
     };
 
 
@@ -737,7 +761,27 @@ function KanbanBoard() {
 
                 <div className="kanban-board-container">
                     <div className="kanban-header">
-                        <h1>{project ? project.display_name : 'Project'} TODOs</h1>
+                        {isEditingTitle ? (
+                            <input
+                                type="text"
+                                className="kanban-title-input"
+                                value={editedTitle}
+                                onChange={e => setEditedTitle(e.target.value)}
+                                onBlur={handleRenameProject}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') handleRenameProject();
+                                    if (e.key === 'Escape') {
+                                        setEditedTitle(project.display_name);
+                                        setIsEditingTitle(false);
+                                    }
+                                }}
+                                autoFocus
+                            />
+                        ) : (
+                            <h1 onDoubleClick={() => setIsEditingTitle(true)}>
+                                {project ? project.display_name : 'Project'} TODOs
+                            </h1>
+                        )}
                         <input
                             type="text"
                             className="kanban-global-search"
@@ -778,10 +822,10 @@ function KanbanBoard() {
                                             <div className="column-title-row">
                                                 <h3>{column}</h3>
                                                 <span className="count">{columnItems.length}</span>
-                                            </div>
-                                            <div className="column-header-actions">
-                                                <button className="btn-toggle-all" onClick={() => toggleAllInColumn(column, true)} title="Minimize All">− All</button>
-                                                <button className="btn-toggle-all" onClick={() => toggleAllInColumn(column, false)} title="Maximize All">+ All</button>
+                                                <div className="column-header-actions">
+                                                    <button className="btn-toggle-all" onClick={() => toggleAllInColumn(column, true)} title="Minimize All">− All</button>
+                                                    <button className="btn-toggle-all" onClick={() => toggleAllInColumn(column, false)} title="Maximize All">+ All</button>
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="column-tools">

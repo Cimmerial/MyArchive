@@ -120,23 +120,31 @@ router.post('/', (req, res) => {
 });
 
 /**
- * DELETE /api/projects/:id - Delete project
+ * PUT /api/projects/:id - Update project
  */
-router.delete('/:id', (req, res) => {
+router.put('/:id', (req, res) => {
     try {
         const { id } = req.params;
-        const db = getMetaDb();
+        const { displayName } = req.body;
 
-        const result = db.prepare('DELETE FROM projects WHERE id = ?').run(id);
+        if (!displayName || displayName.trim() === '') {
+            return res.status(400).json({ error: 'Display name is required' });
+        }
+
+        const db = getMetaDb();
+        const result = db.prepare(
+            'UPDATE projects SET display_name = ? WHERE id = ?'
+        ).run(displayName, id);
 
         if (result.changes === 0) {
             return res.status(404).json({ error: 'Project not found' });
         }
 
-        res.status(204).send();
+        const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(id);
+        res.json(project);
     } catch (error) {
-        console.error('Error deleting project:', error);
-        res.status(500).json({ error: 'Failed to delete project' });
+        console.error('Error updating project:', error);
+        res.status(500).json({ error: 'Failed to update project' });
     }
 });
 

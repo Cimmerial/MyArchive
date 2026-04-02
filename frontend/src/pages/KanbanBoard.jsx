@@ -18,7 +18,7 @@ import {
     useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SquareCheckBig, Square, Calendar } from 'lucide-react';
+import { SquareCheckBig, Square, Calendar, Copy } from 'lucide-react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
@@ -333,7 +333,7 @@ function SortableItem({ item, onUpdate, onDelete, onContextMenu, onOpenEditModal
                             }
                         }}>
                             {renderDescription(item.title)}
-                            {Boolean(isMinimized) && <span className="title-ellipsis"> ...</span>}
+
                         </div>
                     </div>
                     {/* Completion Button */}
@@ -389,6 +389,13 @@ function SortableItem({ item, onUpdate, onDelete, onContextMenu, onOpenEditModal
                         </div>
                     </div>
                     <div className="item-controls-hover">
+                        <button className="btn-icon-sm" onClick={(e) => {
+                            e.stopPropagation();
+                            const text = `${item.title}${item.description ? '\n\n' + item.description : ''}`;
+                            navigator.clipboard.writeText(text);
+                        }} title="Copy to Clipboard">
+                            <Copy size={12} />
+                        </button>
                         <button className="btn-icon-sm" onClick={(e) => { e.stopPropagation(); onOpenEditModal(item); }}>✎</button>
                         <button className="btn-icon-sm delete" onClick={(e) => { e.stopPropagation(); onDelete(item, 'delete'); }}>×</button>
                     </div>

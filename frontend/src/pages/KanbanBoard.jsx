@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -429,6 +429,7 @@ function KanbanBoard() {
 
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editedTitle, setEditedTitle] = useState('');
+    const dragStartRef = useRef(null); // { id, column }
 
     // Initial Load
     useEffect(() => {
@@ -640,6 +641,9 @@ function KanbanBoard() {
     );
     const handleDragStart = (event) => {
         setActiveDragItem(event.active.data.current);
+        const activeId = event.active.id;
+        const activeItem = items.find(i => i.id === activeId);
+        dragStartRef.current = activeItem ? { id: activeId, column: activeItem.column } : null;
     };
 
     const handleDragOver = (event) => {
@@ -689,12 +693,19 @@ function KanbanBoard() {
         const { active, over } = event;
         setActiveDragItem(null);
 
-        if (!over) return;
+        if (!over) {
+            dragStartRef.current = null;
+            return;
+        }
 
         const activeId = active.id;
         const overId = over.id;
 
         const activeItem = items.find(i => i.id === activeId);
+        if (!activeItem) {
+            dragStartRef.current = null;
+            return;
+        }
 
         // Determine target column
         let targetColumn = activeItem.column;
@@ -706,7 +717,13 @@ function KanbanBoard() {
         }
 
 
-        if (activeId !== overId || activeItem.column !== targetColumn) {
+        const dragStart = dragStartRef.current;
+        if (!dragStart) {
+            dragStartRef.current = null;
+            return;
+        }
+
+        if (activeId !== overId || activeItem.column !== targetColumn || dragStart.column !== targetColumn) {
 
             // Final state: reorder and set moved item's column (state may be stale so we fix it here)
             const activeIndex = items.findIndex(i => i.id === activeId);
@@ -724,14 +741,21 @@ function KanbanBoard() {
 
             setItems(finalItems);
 
-            // Persist immediately
+            // Persist immediately, including source+target columns when cross-column moved.
             try {
-                const targetColItems = finalItems.filter(i => i.column === targetColumn);
-                const payload = targetColItems.map((item, idx) => ({
-                    id: item.id,
-                    column: targetColumn,
-                    orderIndex: idx
-                }));
+                const affectedColumns = new Set([targetColumn, dragStart.column]);
+                const payload = [];
+                for (const col of affectedColumns) {
+                    finalItems
+                        .filter(i => i.column === col)
+                        .forEach((item, idx) => {
+                            payload.push({
+                                id: item.id,
+                                column: col,
+                                orderIndex: idx
+                            });
+                        });
+                }
 
                 const initialItem = active.data?.current?.item;
                 if (initialItem && targetColumn === 'Completed' && initialItem.column !== 'Completed') {
@@ -743,6 +767,7 @@ function KanbanBoard() {
                 console.error("Failed to reorder", err);
             }
         }
+        dragStartRef.current = null;
     };
 
     // Stub functions required by Sidebar but not used in this view context
